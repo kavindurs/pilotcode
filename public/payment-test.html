@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Gateway Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-2xl font-bold text-center mb-6">Payment Gateway Test</h1>
+
+            <div class="space-y-4">
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <h2 class="text-lg font-semibold text-blue-800">Genie Business Integration</h2>
+                    <p class="text-sm text-blue-600 mt-2">
+                        Test the complete payment flow with Genie Business gateway
+                    </p>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="font-medium text-gray-700">Available Test Plans:</h3>
+
+                    <div class="border rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-medium">Basic Plan</span>
+                            <span class="text-green-600 font-bold">$19.00/month</span>
+                        </div>
+                        <ul class="text-sm text-gray-600 mb-3">
+                            <li>• 2 Products</li>
+                            <li>• 2 Widgets</li>
+                            <li>• 30 Review Invitations</li>
+                        </ul>
+                        <a href="/payment/checkout?plan_id=2&amount=19.00"
+                           class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors inline-block text-center">
+                            Test Basic Plan Payment
+                        </a>
+                    </div>
+
+                    <div class="border rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-medium">Pro Plan</span>
+                            <span class="text-green-600 font-bold">$59.00/month</span>
+                        </div>
+                        <ul class="text-sm text-gray-600 mb-3">
+                            <li>• 5 Products</li>
+                            <li>• 5 Widgets</li>
+                            <li>• 75 Review Invitations</li>
+                        </ul>
+                        <a href="/payment/checkout?plan_id=3&amount=59.00"
+                           class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors inline-block text-center">
+                            Test Pro Plan Payment
+                        </a>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-yellow-50 rounded-lg">
+                    <h3 class="font-medium text-yellow-800">Test Instructions:</h3>
+                    <ol class="text-sm text-yellow-700 mt-2 space-y-1">
+                        <li>1. Click on a plan above to start checkout</li>
+                        <li>2. Fill in your details on the checkout form</li>
+                        <li>3. Submit to create a payment transaction</li>
+                        <li>4. Complete payment via Genie Business gateway</li>
+                        <li>5. Verify plan activation in your dashboard</li>
+                    </ol>
+                </div>
+
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="font-medium text-gray-700">Gateway Status:</h3>
+                    <div class="mt-2 space-y-1 text-sm text-gray-600">
+                        <div>Environment: <span class="font-mono">Sandbox</span></div>
+                        <div>Currency: <span class="font-mono">LKR</span></div>
+                        <div>API URL: <span class="font-mono">https://api.uat.geniebiz.lk</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
