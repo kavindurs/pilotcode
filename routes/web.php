@@ -6,6 +6,21 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\ProfileController;
+Route::get('/property/dashboard', function () {
+    // Ensure the property owner is logged in
+    if (!session('property_id')) {
+        return redirect()->route('property.login')
+               ->with('error', 'Please login to access your dashboard.');
+    }
+
+    // Retrieve the property owner's data
+    $property = \App\Models\Property::find(session('property_id'));
+    // Get related reviews using property id with user relationship
+    $rates = \App\Models\Rate::where('property_id', $property->id)->with('user')->get();
+
+    return view('property.dashboard', compact('property', 'rates'));
+})->name('property.dashboard');
+
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PropertyController;  // Add this line
 use App\Http\Controllers\RateController;
@@ -227,8 +242,8 @@ Route::get('/property/dashboard', function () {
 
     // Retrieve the property owner’s data
     $property = \App\Models\Property::find(session('property_id'));
-    // Get related reviews using property id
-    $rates = \App\Models\Rate::where('property_id', $property->id)->get();
+    // Get related reviews using property id with user relationship
+    $rates = \App\Models\Rate::where('property_id', $property->id)->with('user')->get();
 
     return view('property.dashboard', compact('property', 'rates'));
 })->name('property.dashboard');
@@ -256,14 +271,54 @@ Route::prefix('admin')->group(function () {
          ->name('admin.dashboard')
          ->middleware('auth:admin');
 
-    // Placeholder route for Users Index
-    Route::get('users', function () {
-         return view('admin.users.index'); // Create this view or adjust as needed
-    })->name('admin.users.index')->middleware('auth:admin');
+    // Users Management
+    Route::get('users', [\App\Http\Controllers\Admin\UserController::class, 'index'])
+         ->name('admin.users.index')
+         ->middleware('auth:admin');
 
-    // Placeholder route for Properties Index
+    Route::get('users/{id}', [\App\Http\Controllers\Admin\UserController::class, 'show'])
+         ->name('admin.users.show')
+         ->middleware('auth:admin');
+
+    Route::get('users/{id}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit'])
+         ->name('admin.users.edit')
+         ->middleware('auth:admin');
+
+    Route::put('users/{id}', [\App\Http\Controllers\Admin\UserController::class, 'update'])
+         ->name('admin.users.update')
+         ->middleware('auth:admin');
+
+    Route::delete('users/{id}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])
+         ->name('admin.users.destroy')
+         ->middleware('auth:admin');
+
+    Route::post('users/{id}/verify', [\App\Http\Controllers\Admin\UserController::class, 'verify'])
+         ->name('admin.users.verify')
+         ->middleware('auth:admin');
+
+    Route::post('users/{id}/unverify', [\App\Http\Controllers\Admin\UserController::class, 'unverify'])
+         ->name('admin.users.unverify')
+         ->middleware('auth:admin');
+
+    // Properties management routes
     Route::get('properties', [\App\Http\Controllers\Admin\PropertyController::class, 'index'])
          ->name('admin.properties.index')
+         ->middleware('auth:admin');
+
+    Route::get('properties/{property}', [\App\Http\Controllers\Admin\PropertyController::class, 'show'])
+         ->name('admin.properties.show')
+         ->middleware('auth:admin');
+
+    Route::get('properties/{property}/edit', [\App\Http\Controllers\Admin\PropertyController::class, 'edit'])
+         ->name('admin.properties.edit')
+         ->middleware('auth:admin');
+
+    Route::put('properties/{property}', [\App\Http\Controllers\Admin\PropertyController::class, 'update'])
+         ->name('admin.properties.update')
+         ->middleware('auth:admin');
+
+    Route::delete('properties/{property}', [\App\Http\Controllers\Admin\PropertyController::class, 'destroy'])
+         ->name('admin.properties.destroy')
          ->middleware('auth:admin');
 
     Route::post('properties/{id}/approve', [\App\Http\Controllers\Admin\PropertyController::class, 'approve'])
@@ -274,9 +329,25 @@ Route::prefix('admin')->group(function () {
          ->name('admin.properties.reject')
          ->middleware('auth:admin');
 
-    // Placeholder route for Reviews Index
+    // Reviews management routes
     Route::get('reviews', [\App\Http\Controllers\Admin\ReviewController::class, 'index'])
          ->name('admin.reviews.index')
+         ->middleware('auth:admin');
+
+    Route::get('reviews/{id}', [\App\Http\Controllers\Admin\ReviewController::class, 'show'])
+         ->name('admin.reviews.show')
+         ->middleware('auth:admin');
+
+    Route::get('reviews/{id}/edit', [\App\Http\Controllers\Admin\ReviewController::class, 'edit'])
+         ->name('admin.reviews.edit')
+         ->middleware('auth:admin');
+
+    Route::put('reviews/{id}', [\App\Http\Controllers\Admin\ReviewController::class, 'update'])
+         ->name('admin.reviews.update')
+         ->middleware('auth:admin');
+
+    Route::delete('reviews/{id}', [\App\Http\Controllers\Admin\ReviewController::class, 'destroy'])
+         ->name('admin.reviews.destroy')
          ->middleware('auth:admin');
 
     Route::post('reviews/{id}/approve', [\App\Http\Controllers\Admin\ReviewController::class, 'approve'])
@@ -287,25 +358,282 @@ Route::prefix('admin')->group(function () {
          ->name('admin.reviews.reject')
          ->middleware('auth:admin');
 
-    // Placeholder route for Settings
-    Route::get('settings', function () {
-         return view('admin.settings'); // Create this view as needed
-    })->name('admin.settings')->middleware('auth:admin');
-
-    // New Dashboard alias
-    Route::get('new-dashboard', [AdminDashboardController::class, 'index'])
-         ->name('admin.new.dashboard')
+    // Email Templates Management
+    Route::get('email-templates', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'index'])
+         ->name('admin.email_templates.index')
          ->middleware('auth:admin');
 
-    Route::resource('properties', \App\Http\Controllers\Admin\PropertyController::class);
-});
+    Route::get('email-templates/create', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'create'])
+         ->name('admin.email_templates.create')
+         ->middleware('auth:admin');
 
-Route::prefix('admin')->middleware('auth:admin')->name('admin.')->group(function () {
-    // ... your other routes ...
+    Route::post('email-templates', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'store'])
+         ->name('admin.email_templates.store')
+         ->middleware('auth:admin');
 
-    Route::resource('email_templates', \App\Http\Controllers\Admin\EmailTemplateController::class)
-         ->except(['create', 'store', 'destroy']);
-    Route::resource('properties', \App\Http\Controllers\Admin\PropertyController::class);
+    Route::get('email-templates/{id}', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'show'])
+         ->name('admin.email_templates.show')
+         ->middleware('auth:admin');
+
+    Route::get('email-templates/{id}/edit', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'edit'])
+         ->name('admin.email_templates.edit')
+         ->middleware('auth:admin');
+
+    Route::put('email-templates/{id}', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'update'])
+         ->name('admin.email_templates.update')
+         ->middleware('auth:admin');
+
+    Route::delete('email-templates/{id}', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'destroy'])
+         ->name('admin.email_templates.destroy')
+         ->middleware('auth:admin');
+
+    // Categories Management
+    Route::get('categories', [\App\Http\Controllers\Admin\CategoryController::class, 'index'])
+         ->name('admin.categories.index')
+         ->middleware('auth:admin');
+
+    Route::get('categories/create', [\App\Http\Controllers\Admin\CategoryController::class, 'create'])
+         ->name('admin.categories.create')
+         ->middleware('auth:admin');
+
+    Route::post('categories', [\App\Http\Controllers\Admin\CategoryController::class, 'store'])
+         ->name('admin.categories.store')
+         ->middleware('auth:admin');
+
+    Route::get('categories/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'show'])
+         ->name('admin.categories.show')
+         ->middleware('auth:admin');
+
+    Route::get('categories/{id}/edit', [\App\Http\Controllers\Admin\CategoryController::class, 'edit'])
+         ->name('admin.categories.edit')
+         ->middleware('auth:admin');
+
+    Route::put('categories/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'update'])
+         ->name('admin.categories.update')
+         ->middleware('auth:admin');
+
+    Route::post('categories/{id}/approve', [\App\Http\Controllers\Admin\CategoryController::class, 'approve'])
+         ->name('admin.categories.approve')
+         ->middleware('auth:admin');
+
+    Route::post('categories/{id}/reject', [\App\Http\Controllers\Admin\CategoryController::class, 'reject'])
+         ->name('admin.categories.reject')
+         ->middleware('auth:admin');
+
+    Route::delete('categories/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'destroy'])
+         ->name('admin.categories.destroy')
+         ->middleware('auth:admin');
+
+    // Subcategories Management
+    Route::get('subcategories', [\App\Http\Controllers\Admin\SubcategoryController::class, 'index'])
+         ->name('admin.subcategories.index')
+         ->middleware('auth:admin');
+
+    Route::get('subcategories/create', [\App\Http\Controllers\Admin\SubcategoryController::class, 'create'])
+         ->name('admin.subcategories.create')
+         ->middleware('auth:admin');
+
+    Route::post('subcategories', [\App\Http\Controllers\Admin\SubcategoryController::class, 'store'])
+         ->name('admin.subcategories.store')
+         ->middleware('auth:admin');
+
+    Route::get('subcategories/{id}', [\App\Http\Controllers\Admin\SubcategoryController::class, 'show'])
+         ->name('admin.subcategories.show')
+         ->middleware('auth:admin');
+
+    Route::get('subcategories/{id}/edit', [\App\Http\Controllers\Admin\SubcategoryController::class, 'edit'])
+         ->name('admin.subcategories.edit')
+         ->middleware('auth:admin');
+
+    Route::put('subcategories/{id}', [\App\Http\Controllers\Admin\SubcategoryController::class, 'update'])
+         ->name('admin.subcategories.update')
+         ->middleware('auth:admin');
+
+    Route::post('subcategories/{id}/approve', [\App\Http\Controllers\Admin\SubcategoryController::class, 'approve'])
+         ->name('admin.subcategories.approve')
+         ->middleware('auth:admin');
+
+    Route::post('subcategories/{id}/reject', [\App\Http\Controllers\Admin\SubcategoryController::class, 'reject'])
+         ->name('admin.subcategories.reject')
+         ->middleware('auth:admin');
+
+    Route::delete('subcategories/{id}', [\App\Http\Controllers\Admin\SubcategoryController::class, 'destroy'])
+         ->name('admin.subcategories.destroy')
+         ->middleware('auth:admin');
+
+    // Plans Management
+    Route::get('plans', [\App\Http\Controllers\Admin\PlanController::class, 'index'])
+         ->name('admin.plans.index')
+         ->middleware('auth:admin');
+
+    Route::get('plans/create', [\App\Http\Controllers\Admin\PlanController::class, 'create'])
+         ->name('admin.plans.create')
+         ->middleware('auth:admin');
+
+    Route::post('plans', [\App\Http\Controllers\Admin\PlanController::class, 'store'])
+         ->name('admin.plans.store')
+         ->middleware('auth:admin');
+
+    Route::get('plans/{id}', [\App\Http\Controllers\Admin\PlanController::class, 'show'])
+         ->name('admin.plans.show')
+         ->middleware('auth:admin');
+
+    Route::get('plans/{id}/edit', [\App\Http\Controllers\Admin\PlanController::class, 'edit'])
+         ->name('admin.plans.edit')
+         ->middleware('auth:admin');
+
+    Route::put('plans/{id}', [\App\Http\Controllers\Admin\PlanController::class, 'update'])
+         ->name('admin.plans.update')
+         ->middleware('auth:admin');
+
+    // Referrals Management
+    Route::get('referrals', [\App\Http\Controllers\Admin\ReferralController::class, 'index'])
+         ->name('admin.referrals.index')
+         ->middleware('auth:admin');
+
+    Route::get('referrals/create', [\App\Http\Controllers\Admin\ReferralController::class, 'create'])
+         ->name('admin.referrals.create')
+         ->middleware('auth:admin');
+
+    Route::post('referrals', [\App\Http\Controllers\Admin\ReferralController::class, 'store'])
+         ->name('admin.referrals.store')
+         ->middleware('auth:admin');
+
+    Route::get('referrals/{id}', [\App\Http\Controllers\Admin\ReferralController::class, 'show'])
+         ->name('admin.referrals.show')
+         ->middleware('auth:admin');
+
+    Route::get('referrals/{id}/edit', [\App\Http\Controllers\Admin\ReferralController::class, 'edit'])
+         ->name('admin.referrals.edit')
+         ->middleware('auth:admin');
+
+    Route::put('referrals/{id}', [\App\Http\Controllers\Admin\ReferralController::class, 'update'])
+         ->name('admin.referrals.update')
+         ->middleware('auth:admin');
+
+    Route::post('referrals/{id}/activate', [\App\Http\Controllers\Admin\ReferralController::class, 'activate'])
+         ->name('admin.referrals.activate')
+         ->middleware('auth:admin');
+
+    Route::post('referrals/{id}/deactivate', [\App\Http\Controllers\Admin\ReferralController::class, 'deactivate'])
+         ->name('admin.referrals.deactivate')
+         ->middleware('auth:admin');
+
+    Route::delete('referrals/{id}', [\App\Http\Controllers\Admin\ReferralController::class, 'destroy'])
+         ->name('admin.referrals.destroy')
+         ->middleware('auth:admin');
+
+    Route::post('referrals/update-rate', [\App\Http\Controllers\Admin\ReferralController::class, 'updateReferralRate'])
+         ->name('admin.referrals.update-rate')
+         ->middleware('auth:admin');
+
+    // Staff Management
+    Route::get('staff', [\App\Http\Controllers\Admin\StaffController::class, 'index'])
+         ->name('admin.staff.index')
+         ->middleware('auth:admin');
+
+    Route::get('staff/create', [\App\Http\Controllers\Admin\StaffController::class, 'create'])
+         ->name('admin.staff.create')
+         ->middleware('auth:admin');
+
+    Route::post('staff', [\App\Http\Controllers\Admin\StaffController::class, 'store'])
+         ->name('admin.staff.store')
+         ->middleware('auth:admin');
+
+    Route::get('staff/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'show'])
+         ->name('admin.staff.show')
+         ->middleware('auth:admin');
+
+    Route::get('staff/{id}/edit', [\App\Http\Controllers\Admin\StaffController::class, 'edit'])
+         ->name('admin.staff.edit')
+         ->middleware('auth:admin');
+
+    Route::put('staff/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'update'])
+         ->name('admin.staff.update')
+         ->middleware('auth:admin');
+
+    Route::post('staff/{id}/activate', [\App\Http\Controllers\Admin\StaffController::class, 'activate'])
+         ->name('admin.staff.activate')
+         ->middleware('auth:admin');
+
+    Route::post('staff/{id}/deactivate', [\App\Http\Controllers\Admin\StaffController::class, 'deactivate'])
+         ->name('admin.staff.deactivate')
+         ->middleware('auth:admin');
+
+    Route::post('staff/{id}/suspend', [\App\Http\Controllers\Admin\StaffController::class, 'suspend'])
+         ->name('admin.staff.suspend')
+         ->middleware('auth:admin');
+
+    // Payment Management
+    Route::get('payments', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])
+         ->name('admin.payments.index')
+         ->middleware('auth:admin');
+
+    Route::get('payments/{id}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])
+         ->name('admin.payments.show')
+         ->middleware('auth:admin');
+
+    Route::get('payments/{id}/edit', [\App\Http\Controllers\Admin\PaymentController::class, 'edit'])
+         ->name('admin.payments.edit')
+         ->middleware('auth:admin');
+
+    Route::put('payments/{id}', [\App\Http\Controllers\Admin\PaymentController::class, 'update'])
+         ->name('admin.payments.update')
+         ->middleware('auth:admin');
+
+    Route::delete('payments/{id}', [\App\Http\Controllers\Admin\PaymentController::class, 'destroy'])
+         ->name('admin.payments.destroy')
+         ->middleware('auth:admin');
+
+    Route::post('payments/{id}/confirm', [\App\Http\Controllers\Admin\PaymentController::class, 'confirm'])
+         ->name('admin.payments.confirm')
+         ->middleware('auth:admin');
+
+    Route::post('payments/{id}/cancel', [\App\Http\Controllers\Admin\PaymentController::class, 'cancel'])
+         ->name('admin.payments.cancel')
+         ->middleware('auth:admin');
+
+    Route::post('payments/{id}/refund', [\App\Http\Controllers\Admin\PaymentController::class, 'refund'])
+         ->name('admin.payments.refund')
+         ->middleware('auth:admin');
+
+    // Wallet Management
+    Route::get('wallets', [\App\Http\Controllers\Admin\WalletController::class, 'index'])
+         ->name('admin.wallets.index')
+         ->middleware('auth:admin');
+
+    Route::get('wallets/{id}', [\App\Http\Controllers\Admin\WalletController::class, 'show'])
+         ->name('admin.wallets.show')
+         ->middleware('auth:admin');
+
+    Route::get('wallets/{id}/edit', [\App\Http\Controllers\Admin\WalletController::class, 'edit'])
+         ->name('admin.wallets.edit')
+         ->middleware('auth:admin');
+
+    Route::put('wallets/{id}', [\App\Http\Controllers\Admin\WalletController::class, 'update'])
+         ->name('admin.wallets.update')
+         ->middleware('auth:admin');
+
+    Route::delete('wallets/{id}', [\App\Http\Controllers\Admin\WalletController::class, 'destroy'])
+         ->name('admin.wallets.destroy')
+         ->middleware('auth:admin');
+
+    Route::post('wallets/{id}/adjust-balance', [\App\Http\Controllers\Admin\WalletController::class, 'adjustBalance'])
+         ->name('admin.wallets.adjust')
+         ->middleware('auth:admin');
+
+    // Admin Profile Management
+    Route::get('profile/edit', [\App\Http\Controllers\Admin\AdminProfileController::class, 'edit'])
+         ->name('admin.profile.edit')
+         ->middleware('auth:admin');
+
+    Route::put('profile', [\App\Http\Controllers\Admin\AdminProfileController::class, 'update'])
+         ->name('admin.profile.update')
+         ->middleware('auth:admin');
+
+    Route::delete('profile/remove-picture', [\App\Http\Controllers\Admin\AdminProfileController::class, 'removeProfilePicture'])
+         ->name('admin.profile.remove-picture')
+         ->middleware('auth:admin');
 });
 
 // Public routes for email tracking and reviews
@@ -442,34 +770,20 @@ Route::post('/contact-us', function (Request $request) {
 
 Route::post('/properties', [App\Http\Controllers\PropertyController::class, 'store'])->name('properties.store');
 
-// Add this near your other routes
-
-Route::get('/subcategories/{categoryId}', function ($categoryId) {
-    // Direct web route (not API) as a fallback
-    return App\Models\Subcategory::where('category_id', $categoryId)
-        ->where('is_active', 1)
-        ->select('id', 'name')
-        ->get();
+Route::get('/api/subcategories/{categoryId}', function($categoryId) {
+    try {
+        // Use raw query builder for reliability
+        $subcategories = DB::select("SELECT id, name, category_id FROM subcategories WHERE category_id = ?", [$categoryId]);
+        return response()->json($subcategories);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
 })->name('subcategories.get');
 
 // Add this to your web.php routes file
 Route::get('/add-business', function () {
     return view('properties.add');
 })->name('properties.add');
-
-// Add this route to your web.php file
-Route::get('/test-subcategories/{categoryId}', function($categoryId) {
-    try {
-        $subcategories = \App\Models\Subcategory::where('category_id', $categoryId)
-            ->where('is_active', 1)
-            ->orderBy('name')
-            ->get(['id', 'name']);
-
-        return response()->json($subcategories);
-    } catch (\Exception $e) {
-        return response()->json(['error' => $e->getMessage()], 500);
-    }
-});
 
 // Add this to your web.php
 Route::get('/mock-payment/{transaction_id}', function($transactionId) {
@@ -519,5 +833,21 @@ Route::post('/mock-payment/{transaction_id}/complete', function($transactionId) 
 
     return redirect()->route('payment.success');
 })->name('mock.payment.complete');
+
+Route::get('/test-subcategories-direct/{categoryId}', function($categoryId) {
+    try {
+        // Try using raw query builder first
+        $subcategories = DB::select("SELECT id, name, category_id FROM subcategories WHERE category_id = ?", [$categoryId]);
+        return response()->json($subcategories);
+    } catch (\Exception $e) {
+        // Fallback to hardcoded data
+        $testData = [
+            ['id' => 1, 'name' => 'Animal Health', 'category_id' => 1],
+            ['id' => 2, 'name' => 'Animal Parks & Zoo', 'category_id' => 1],
+            ['id' => 3, 'name' => 'Cats & Dogs', 'category_id' => 1],
+        ];
+        return response()->json($testData);
+    }
+});
 
 

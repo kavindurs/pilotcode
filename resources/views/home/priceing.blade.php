@@ -1,9 +1,72 @@
+@extends('layouts.app')
 
-<section class="py-10 bg-white sm:py-16 lg:py-24">
+@section('title', 'Pricing & Plans - Scoreness')
+
+@section('content')
+<style>
+    /* Ensure white background for the entire pricing page */
+    body {
+        background-color: #ffffff !important;
+    }
+
+    .main-content {
+        background-color: #ffffff !important;
+    }
+
+    /* Override any default app layout backgrounds */
+    #app {
+        background-color: #ffffff !important;
+    }
+</style>
+
+<!-- Location Access Required Modal -->
+<div id="locationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+        <div id="locationLoading" class="hidden">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Requesting Location Access</h3>
+            <p class="text-gray-600">Please allow location access to view location-based pricing plans.</p>
+        </div>
+
+        <div id="locationRequest">
+            <div class="mb-4">
+                <svg class="w-16 h-16 text-blue-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Location Access Required</h3>
+            <p class="text-gray-600 mb-6">We need access to your location to show you the most relevant pricing plans available in your area.</p>
+            <button id="allowLocationBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+                Allow Location Access
+            </button>
+        </div>
+
+        <div id="locationError" class="hidden">
+            <div class="mb-4">
+                <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-red-600 mb-2">Location Access Denied</h3>
+            <p class="text-gray-600 mb-6">Location access is required to view our pricing plans. Please enable location access in your browser settings and refresh the page.</p>
+            <button onclick="window.location.reload()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+                Refresh Page
+            </button>
+        </div>
+    </div>
+</div>
+
+<section id="pricingContent" class="py-10 bg-white sm:py-16 lg:py-24" style="display: none;">
     <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div class="max-w-xl mx-auto text-center">
             <h2 class="text-4xl font-bold text-black lg:text-5xl sm:text-5xl">Pricing &amp; Plans</h2>
             <p class="mt-4 text-lg leading-relaxed text-gray-600">Choose the perfect plan to elevate your business presence and customer engagement.</p>
+            <div id="locationInfo" class="mt-4 p-3 bg-blue-50 rounded-lg" style="display: none;">
+                <p class="text-sm text-blue-700">
+                    <span class="font-medium">📍 Location:</span> <span id="userLocationDisplay">Detecting...</span>
+                </p>
+            </div>
         </div>
 
         @php
@@ -279,11 +342,20 @@
 
 
 
-<!-- JavaScript to filter plan cards by country (prices remain as stored in the database) -->
+<!-- JavaScript to require location access and filter plan cards by country -->
 <script>
     // Allowed plan IDs based on country
     const sriLankaPlans = ['1', '5', '6', '7'];
     const otherPlans = ['1', '2', '3', '4'];
+
+    // DOM elements
+    const locationModal = document.getElementById('locationModal');
+    const locationLoading = document.getElementById('locationLoading');
+    const locationRequest = document.getElementById('locationRequest');
+    const locationError = document.getElementById('locationError');
+    const pricingContent = document.getElementById('pricingContent');
+    const allowLocationBtn = document.getElementById('allowLocationBtn');
+    const userLocationDisplay = document.getElementById('userLocationDisplay');
 
     // Function to filter comparison table columns
     function filterComparisonColumns(allowedIds) {
@@ -295,12 +367,41 @@
         });
     }
 
-    // Geolocation and Reverse Geocoding via Nominatim
-    if (navigator.geolocation) {
+    // Function to show location loading
+    function showLocationLoading() {
+        locationRequest.classList.add('hidden');
+        locationError.classList.add('hidden');
+        locationLoading.classList.remove('hidden');
+    }
+
+    // Function to show location error
+    function showLocationError() {
+        locationLoading.classList.add('hidden');
+        locationRequest.classList.add('hidden');
+        locationError.classList.remove('hidden');
+    }
+
+    // Function to hide modal and show content
+    function showPricingContent(locationText = 'Location detected') {
+        locationModal.style.display = 'none';
+        pricingContent.style.display = 'block';
+        userLocationDisplay.textContent = locationText;
+    }
+
+    // Function to request location
+    function requestLocation() {
+        if (!navigator.geolocation) {
+            console.error("Geolocation is not supported by this browser.");
+            showLocationError();
+            return;
+        }
+
+        showLocationLoading();
+
         navigator.geolocation.getCurrentPosition(function(position) {
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
-            const altitude = position.coords.altitude; // may be null
+            const altitude = position.coords.altitude;
 
             // Log coordinates and altitude for debugging
             document.getElementById('user-coordinates').innerText = `Latitude: ${latitude}, Longitude: ${longitude}`;
@@ -312,6 +413,9 @@
                 .then(data => {
                     if (data && data.address && data.address.country) {
                         const country = data.address.country;
+                        const city = data.address.city || data.address.town || data.address.village || '';
+                        const displayLocation = city ? `${city}, ${country}` : country;
+
                         document.getElementById('user-country').innerText = country;
                         console.log("Country:", country);
 
@@ -321,20 +425,49 @@
                         } else {
                             filterComparisonColumns(otherPlans);
                         }
+
+                        // Show pricing content
+                        showPricingContent(displayLocation);
                     } else {
                         filterComparisonColumns(otherPlans);
+                        showPricingContent('Location detected');
                     }
                 })
                 .catch(error => {
                     console.error('Reverse geocoding error:', error);
                     filterComparisonColumns(otherPlans);
+                    showPricingContent('Location detected');
                 });
         }, function(error) {
             console.error('Geolocation error:', error);
-            filterComparisonColumns(otherPlans);
+            showLocationError();
+        }, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000 // 5 minutes
         });
-    } else {
-        console.error("Geolocation is not supported by this browser.");
-        filterComparisonColumns(otherPlans);
     }
+
+    // Event listener for allow location button
+    allowLocationBtn.addEventListener('click', requestLocation);
+
+    // Auto-request location on page load if previously granted
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if geolocation permission was previously granted
+        if (navigator.permissions) {
+            navigator.permissions.query({name: 'geolocation'}).then(function(result) {
+                if (result.state === 'granted') {
+                    requestLocation();
+                } else {
+                    // Show modal to request permission
+                    locationModal.style.display = 'flex';
+                }
+            });
+        } else {
+            // Fallback for browsers that don't support permissions API
+            locationModal.style.display = 'flex';
+        }
+    });
 </script>
+
+@endsection

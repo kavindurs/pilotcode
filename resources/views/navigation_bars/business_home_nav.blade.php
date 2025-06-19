@@ -21,7 +21,7 @@
             <!-- Desktop Navigation -->
             <div class="hidden lg:flex lg:items-center lg:ml-auto lg:space-x-6">
                 <a href="{{ auth()->check() ? route('dashboard') : '/' }}" class="flex items-center space-x-2 text-base font-medium text-black hover:text-blue-600">
-                    <i class="fas fa-edit"></i>
+                    <i class="fas fa-external-link-alt"></i>
                     <span>For Customer</span>
                 </a>
                 <!-- Categories Dropdown -->
@@ -88,8 +88,8 @@
                 </div>
 
                 <a href="{{ route('property.login') }}" class="flex items-center space-x-2 text-base font-medium text-black hover:text-blue-600">
-                    <i class="fas fa-user"></i>
-                    <span>Sign in</span>
+                    <i class="fas fa-briefcase"></i>
+                    <span>Business Login</span>
                 </a>
 
                 <!-- Business Owner Button -->
@@ -157,8 +157,15 @@
                             </div>
                         </div>
 
+                        <a href="{{ auth()->check() ? route('dashboard') : '/' }}" class="flex items-center space-x-2 py-2 text-base font-medium text-black hover:text-blue-600">
+                            <i class="fas fa-external-link-alt"></i>
+                            <span>For Customer</span>
+                        </a>
                         <a href="{{ route('review') }}" class="py-2 text-base font-medium text-black hover:text-blue-600">Write a Review</a>
-                        <a href="{{ route('property.login') }}" class="py-2 text-base font-medium text-black hover:text-blue-600">Sign in</a>
+                        <a href="{{ route('property.login') }}" class="flex items-center space-x-2 py-2 text-base font-medium text-black hover:text-blue-600">
+                            <i class="fas fa-briefcase"></i>
+                            <span>Business Login</span>
+                        </a>
                     </div>
                 </div>
 

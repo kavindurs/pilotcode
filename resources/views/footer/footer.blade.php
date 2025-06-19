@@ -60,7 +60,7 @@
                     </li>
 
                     <li>
-                        <a href="{{ route('login') }}" title="" class="flex text-base text-black transition-all duration-200 hover:text-blue-600 focus:text-blue-600"> Sign-Up </a>
+                        <a href="{{ route('pricing') }}" title="" class="flex text-base text-black transition-all duration-200 hover:text-blue-600 focus:text-blue-600"> Pricing </a>
                     </li>
 
                     <li>

@@ -72,7 +72,7 @@
             @php
                 $plans = \App\Models\Plan::all();
             @endphp
-            @include('home.priceing', ['plans' => $plans])
+
             @include('home.faq')
         </div>
     </div>

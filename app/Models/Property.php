@@ -19,6 +19,8 @@ class Property extends Model
         'employee_count',
         'category',
         'subcategory',
+        'category_id',
+        'subcategory_id',
         'domain',
         'business_email',
         'document_path',
@@ -75,12 +77,12 @@ class Property extends Model
 
     public function category()
     {
-        return $this->belongsTo(Category::class, 'category', 'id');
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     public function subcategory()
     {
-        return $this->belongsTo(Subcategory::class, 'subcategory', 'id');
+        return $this->belongsTo(Subcategory::class, 'subcategory_id');
     }
 
     // Add accessor methods to get category and subcategory names
