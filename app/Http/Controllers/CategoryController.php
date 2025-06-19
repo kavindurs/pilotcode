@@ -12,14 +12,18 @@ class CategoryController extends Controller
         $search = $request->input('search');
 
         $categories = Category::with(['subcategories' => function($query) use ($search) {
+            // Only load active subcategories
+            $query->where('is_active', 1);
             if ($search) {
                 $query->where('name', 'like', "%{$search}%");
             }
         }])
+        ->where('is_active', 1) // Only load active categories
         ->when($search, function($query) use ($search) {
             $query->where('name', 'like', "%{$search}%")
                   ->orWhereHas('subcategories', function($query) use ($search) {
-                      $query->where('name', 'like', "%{$search}%");
+                      $query->where('name', 'like', "%{$search}%")
+                            ->where('is_active', 1); // Ensure subcategories are active in search
                   });
         })
         ->get();

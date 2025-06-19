@@ -147,7 +147,7 @@ class Property extends Model
             return 0;
         }
 
-        switch ($plan->name) {
+        switch ($plan->plan->name) {
             case 'Free':
                 return 0; // No products allowed
             case 'Basic':
@@ -198,7 +198,7 @@ class Property extends Model
             return 0;
         }
 
-        switch ($plan->name) {
+        switch ($plan->plan->name) {
             case 'Free':
                 return 100; // 100 characters for Free plan
             case 'Basic':
@@ -261,7 +261,7 @@ class Property extends Model
             return 0;
         }
 
-        switch ($plan->name) {
+        switch ($plan->plan->name) {
             case 'Free':
                 return 5; // 5 invitations per month
             case 'Basic':
@@ -315,7 +315,7 @@ class Property extends Model
             return 0; // Default to 0 if no plan is active
         }
 
-        switch ($plan->name) {
+        switch ($plan->plan->name) {
             case 'Free':
                 return 0; // Free plan: 0 emails per month
             case 'Basic':
@@ -355,7 +355,7 @@ class Property extends Model
             return 0;
         }
 
-        switch ($plan->name) {
+        switch ($plan->plan->name) {
             case 'Free':
                 return 0; // No widgets allowed
             case 'Basic':

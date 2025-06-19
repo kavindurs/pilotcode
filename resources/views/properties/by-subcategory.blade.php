@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $subcategory . ' | Businesses and Services')
+@section('title', $subcategoryModel->name . ' | Businesses and Services')
 
 @section('styles')
 <style>
@@ -107,27 +107,15 @@
                         <li aria-current="page">
                             <div class="flex items-center">
                                 <i class="fas fa-chevron-right text-blue-300 mx-1 text-xs"></i>
-                                <!-- Get subcategory name from subcategories table using the ID -->
-                                @php
-                                    $subcategoryName = DB::table('subcategories')
-                                        ->where('id', $subcategory)
-                                        ->value('name');
-                                @endphp
-                                <span class="text-white font-medium">{{ $subcategoryName ?? 'Uncategorized' }}</span>
+                                <!-- Use the subcategory model directly -->
+                                <span class="text-white font-medium">{{ $subcategoryModel->name }}</span>
                             </div>
                         </li>
                     </ol>
                 </nav>
 
-                @php
-                // This query might already exist in your breadcrumb section
-                $subcategoryName = DB::table('subcategories')
-                    ->where('id', $subcategory)
-                    ->value('name');
-                @endphp
-
-                <!-- Update the heading to use the name -->
-                <h1 class="text-2xl md:text-3xl font-bold text-white mb-1 mt-5">{{ $subcategoryName ?? 'Uncategorized' }}</h1>
+                <!-- Update the heading to use the subcategory model -->
+                <h1 class="text-2xl md:text-3xl font-bold text-white mb-1 mt-5">{{ $subcategoryModel->name }}</h1>
                 <p class="text-blue-100">
                     Showing {{ $properties->count() }} {{ Str::plural('business', $properties->count()) }} in this category
                 </p>
@@ -163,7 +151,7 @@
         <!-- Desktop Filter Sidebar -->
         <div class="hidden lg:block w-72 flex-shrink-0">
             <div class="bg-white rounded-lg shadow-md sticky-filter top-4 border border-gray-100">
-                <form action="{{ route('properties.subcategory', $subcategory) }}" method="GET">
+                <form action="{{ route('properties.subcategory', $subcategoryModel->id) }}" method="GET">
                     <!-- Header -->
                     <div class="bg-gray-50 rounded-t-lg px-5 py-4 border-b border-gray-100">
                         <div class="flex items-center justify-between">

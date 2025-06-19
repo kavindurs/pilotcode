@@ -25,7 +25,7 @@ class WidgetController extends Controller
             return 0;
         }
 
-        switch ($plan->name) {
+        switch ($plan->plan->name) {
             case 'Free':
                 return 0; // No widgets allowed
             case 'Basic':
@@ -52,7 +52,7 @@ class WidgetController extends Controller
             $plan = $property->getActivePlan();
 
             // If no active plan, default to Free
-            $planType = $plan ? $plan->name : 'Free';
+            $planType = $plan ? $plan->plan->name : 'Free';
 
             // Get widget limit
             $widgetLimit = $this->getWidgetLimit($property);

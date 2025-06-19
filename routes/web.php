@@ -69,6 +69,11 @@ Route::post('/password/email', [AuthController::class, 'sendResetLink'])->name('
 Route::get('/password/reset/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
 Route::post('/password/reset', [AuthController::class, 'resetPassword'])->name('password.update');
 
+// OTP Email Verification Routes
+Route::get('/verify-email', [AuthController::class, 'showOtpVerificationForm'])->name('otp.verify.form');
+Route::post('/verify-email', [AuthController::class, 'verifyOtp'])->name('otp.verify');
+Route::post('/resend-otp', [AuthController::class, 'resendOtp'])->name('otp.resend');
+
 Route::get('/dashboard', function () {
     $user = \Illuminate\Support\Facades\Auth::user();
     $firstName = Str::before($user->name, ' ');
@@ -80,6 +85,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Two-Factor Authentication Routes
+    Route::post('/profile/two-factor/enable', [ProfileController::class, 'enableTwoFactor'])->name('profile.two-factor.enable');
+    Route::post('/profile/two-factor/confirm', [ProfileController::class, 'confirmTwoFactor'])->name('profile.two-factor.confirm');
+    Route::post('/profile/two-factor/disable', [ProfileController::class, 'disableTwoFactor'])->name('profile.two-factor.disable');
+    Route::post('/profile/two-factor/recovery-codes', [ProfileController::class, 'generateRecoveryCodes'])->name('profile.two-factor.recovery-codes');
 
     // Referral Routes
     Route::prefix('referrals')->name('referrals.')->group(function () {

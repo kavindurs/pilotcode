@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>My Profile - {{ Auth::user()->name }}</title>
     @vite('resources/css/app.css')
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -483,22 +484,163 @@
 
                                 <p class="text-gray-600 mb-6">Add an extra layer of security to your account by enabling two-factor authentication.</p>
 
-                                <!-- 2FA Status -->
-                                <div class="bg-gray-50 rounded-lg p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                    <div>
-                                        <div class="flex items-center">
-                                            <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-3">
-                                                <i class="fas fa-shield-alt"></i>
+                                @if (session('recovery_codes'))
+                                    <!-- Recovery Codes Display -->
+                                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+                                        <div class="flex items-center mb-4">
+                                            <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 mr-3">
+                                                <i class="fas fa-key"></i>
                                             </div>
-                                            <p class="font-medium text-gray-900">Not Enabled</p>
+                                            <h4 class="text-lg font-semibold text-yellow-800">Recovery Codes</h4>
                                         </div>
-                                        <p class="text-sm text-gray-600 mt-1.5 ml-11">Two-factor authentication is not currently enabled for your account.</p>
+                                        <p class="text-yellow-700 mb-4">Store these recovery codes in a secure password manager. They can be used to recover access to your account if your two-factor authentication device is lost.</p>
+                                        <div class="grid grid-cols-2 gap-2 font-mono text-sm bg-white p-4 rounded border">
+                                            @foreach (session('recovery_codes') as $code)
+                                                <div class="p-2 bg-gray-50 rounded text-center">{{ $code }}</div>
+                                            @endforeach
+                                        </div>
+                                        <p class="text-sm text-yellow-600 mt-3">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            These recovery codes will only be shown once. Save them now!
+                                        </p>
                                     </div>
-                                    <button type="button" class="inline-flex items-center px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
-                                        <i class="fas fa-shield-alt mr-2"></i>
-                                        Enable 2FA
-                                    </button>
-                                </div>
+                                @endif
+
+                                <!-- 2FA Status -->
+                                @if (auth()->user()->hasTwoFactorEnabled())
+                                    <!-- 2FA Enabled -->
+                                    <div class="bg-green-50 rounded-lg p-5 mb-6">
+                                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                            <div>
+                                                <div class="flex items-center">
+                                                    <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3">
+                                                        <i class="fas fa-shield-alt"></i>
+                                                    </div>
+                                                    <p class="font-medium text-gray-900">Enabled</p>
+                                                </div>
+                                                <p class="text-sm text-gray-600 mt-1.5 ml-11">Two-factor authentication is protecting your account.</p>
+                                            </div>
+                                            <div class="flex gap-3">
+                                                <!-- Generate New Recovery Codes -->
+                                                <button type="button"
+                                                        onclick="if(confirm('This will invalidate your existing recovery codes. Continue?')) { document.getElementById('recovery-codes-form').submit(); }"
+                                                        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+                                                    <i class="fas fa-key mr-2"></i>
+                                                    New Codes
+                                                </button>
+
+                                                <!-- Disable 2FA -->
+                                                <button type="button"
+                                                        onclick="if(confirm('Are you sure you want to disable two-factor authentication?')) { showDisableForm(); }"
+                                                        class="inline-flex items-center px-4 py-2 border border-red-300 rounded-lg shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200">
+                                                    <i class="fas fa-shield-alt mr-2"></i>
+                                                    Disable 2FA
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hidden Forms -->
+                                    <form id="recovery-codes-form" action="{{ route('profile.two-factor.recovery-codes') }}" method="POST" class="hidden">
+                                        @csrf
+                                        <input type="password" name="password" id="recovery-password" required>
+                                    </form>
+
+                                    <!-- Disable 2FA Form (Hidden by default) -->
+                                    <form id="disable-2fa-form" action="{{ route('profile.two-factor.disable') }}" method="POST" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                        @csrf
+                                        <div class="mb-4">
+                                            <label for="disable_password" class="block text-sm font-medium text-gray-700 mb-2">Confirm your password to disable 2FA:</label>
+                                            <input type="password"
+                                                   name="password"
+                                                   id="disable_password"
+                                                   required
+                                                   class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div class="flex gap-3">
+                                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                                Disable 2FA
+                                            </button>
+                                            <button type="button" onclick="hideDisableForm()" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </form>
+                                @else
+                                    <!-- 2FA Disabled -->
+                                    <div class="bg-gray-50 rounded-lg p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                        <div>
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-3">
+                                                    <i class="fas fa-shield-alt"></i>
+                                                </div>
+                                                <p class="font-medium text-gray-900">Not Enabled</p>
+                                            </div>
+                                            <p class="text-sm text-gray-600 mt-1.5 ml-11">Two-factor authentication is not currently enabled for your account.</p>
+                                        </div>
+                                        <button type="button"
+                                                onclick="enableTwoFactor()"
+                                                class="inline-flex items-center px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+                                            <i class="fas fa-shield-alt mr-2"></i>
+                                            Enable 2FA
+                                        </button>
+                                    </div>
+
+                                    <!-- 2FA Setup Modal -->
+                                    <div id="setup-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                                        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeSetupModal()"></div>
+                                            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                                            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                                    <div class="sm:flex sm:items-start">
+                                                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                                                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                                                                Set up Two-Factor Authentication
+                                                            </h3>
+                                                            <div class="mt-2">
+                                                                <p class="text-sm text-gray-500 mb-4">
+                                                                    Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+                                                                </p>
+                                                                <div id="qr-code-container" class="text-center mb-4">
+                                                                    <!-- QR code will be inserted here -->
+                                                                </div>
+                                                                <div id="manual-entry" class="mb-4">
+                                                                    <label class="block text-sm font-medium text-gray-700 mb-2">Or enter this code manually:</label>
+                                                                    <div id="secret-key" class="p-3 bg-gray-100 rounded font-mono text-sm text-center">
+                                                                        <!-- Secret key will be inserted here -->
+                                                                    </div>
+                                                                </div>
+                                                                <form action="{{ route('profile.two-factor.confirm') }}" method="POST">
+                                                                    @csrf
+                                                                    <div class="mb-4">
+                                                                        <label for="verification_code" class="block text-sm font-medium text-gray-700 mb-2">Enter 6-digit code from your app:</label>
+                                                                        <input type="text"
+                                                                               name="code"
+                                                                               id="verification_code"
+                                                                               maxlength="6"
+                                                                               pattern="[0-9]{6}"
+                                                                               required
+                                                                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-center text-lg font-mono"
+                                                                               placeholder="000000">
+                                                                    </div>
+                                                                    <div class="flex gap-3">
+                                                                        <button type="submit" class="flex-1 inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                                                            Verify & Enable
+                                                                        </button>
+                                                                        <button type="button" onclick="closeSetupModal()" class="flex-1 inline-flex justify-center items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                                                            Cancel
+                                                                        </button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
 
@@ -777,6 +919,94 @@
             console.error("Geolocation is not supported by this browser.");
             document.getElementById('user-coordinates').innerText = 'Geolocation not supported by your browser.';
         }
+
+        // Two-Factor Authentication Functions
+        function enableTwoFactor() {
+            console.log('Enable 2FA button clicked');
+
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Setting up...';
+
+            fetch('{{ route("profile.two-factor.enable") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+
+                // Reset button
+                button.disabled = false;
+                button.innerHTML = originalText;
+
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // Update the modal content
+                document.getElementById('qr-code-container').innerHTML = data.qr_code;
+                document.getElementById('secret-key').textContent = data.secret;
+
+                // Show the modal
+                document.getElementById('setup-modal').classList.remove('hidden');
+
+                // Focus on the verification code input
+                setTimeout(() => {
+                    document.getElementById('verification_code').focus();
+                }, 100);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+
+                // Reset button
+                button.disabled = false;
+                button.innerHTML = originalText;
+
+                alert('An error occurred while setting up 2FA. Please try again.');
+            });
+        }
+
+        function closeSetupModal() {
+            document.getElementById('setup-modal').classList.add('hidden');
+            // Clear the form
+            document.getElementById('verification_code').value = '';
+        }
+
+        function showDisableForm() {
+            // Prompt for password
+            const password = prompt('Please enter your password to disable 2FA:');
+            if (password) {
+                document.getElementById('disable_password').value = password;
+                document.getElementById('disable-2fa-form').classList.remove('hidden');
+            }
+        }
+
+        function hideDisableForm() {
+            document.getElementById('disable-2fa-form').classList.add('hidden');
+            document.getElementById('disable_password').value = '';
+        }
+
+        // Handle recovery codes generation
+        function generateRecoveryCodes() {
+            const password = prompt('Please enter your password to generate new recovery codes:');
+            if (password) {
+                document.getElementById('recovery-password').value = password;
+                document.getElementById('recovery-codes-form').submit();
+            }
+        }
+
+        // Expose function to global scope for Alpine.js
+        window.enableTwoFactor = enableTwoFactor;
     </script>
 </body>
 </html>

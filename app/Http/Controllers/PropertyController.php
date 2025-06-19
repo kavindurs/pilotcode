@@ -219,12 +219,27 @@ class PropertyController extends Controller
 
     public function showBySubcategory($subcategory, Request $request)
     {
-        // Get the category first
-        $category = Category::whereHas('subcategories', function($query) use ($subcategory) {
-            $query->where('name', $subcategory);
-        })->first();
+        // Find the subcategory by ID and ensure it's active
+        $subcategoryModel = Subcategory::where('id', $subcategory)
+            ->where('is_active', 1)
+            ->first();
 
-        $query = Property::where('subcategory', $subcategory)
+        // If subcategory not found or inactive, return 404
+        if (!$subcategoryModel) {
+            abort(404, 'Subcategory not found or inactive');
+        }
+
+        // Get the category and ensure it's also active
+        $category = Category::where('id', $subcategoryModel->category_id)
+            ->where('is_active', 1)
+            ->first();
+
+        // If category not found or inactive, return 404
+        if (!$category) {
+            abort(404, 'Category not found or inactive');
+        }
+
+        $query = Property::where('subcategory', $subcategoryModel->id)
             ->where('status', 'Approved');
 
         // Apply rating filter
@@ -273,7 +288,7 @@ class PropertyController extends Controller
 
         // Get property types count for display
         $propertyTypeCounts = Property::where('status', 'Approved')
-            ->where('subcategory', $subcategory)
+            ->where('subcategory', $subcategoryModel->id)
             ->selectRaw('property_type, count(*) as count')
             ->groupBy('property_type')
             ->pluck('count', 'property_type')
@@ -281,7 +296,7 @@ class PropertyController extends Controller
 
         return view('properties.by-subcategory', compact(
             'properties',
-            'subcategory',
+            'subcategoryModel',
             'category',
             'countries',
             'propertyTypeCounts'
@@ -358,8 +373,22 @@ class PropertyController extends Controller
      * @param  \App\Models\Property  $property
      * @return \Illuminate\View\View
      */
-    public function show(Property $property)
+    public function show(Property $property, Request $request)
     {
+        // Check if user came via invitation link
+        if ($request->has('invitation')) {
+            $invitationId = $request->get('invitation');
+
+            // Find the invitation and update click tracking
+            $invitation = \App\Models\ReviewInvitation::find($invitationId);
+            if ($invitation && $invitation->property_id == $property->id) {
+                // Update the invitation status to "clicked" and set clicked_at timestamp
+                $invitation->status = 'clicked';
+                $invitation->clicked_at = now();
+                $invitation->save();
+            }
+        }
+
         // Load rates with user information (including profile pictures)
         $property->load(['rates' => function($query) {
             $query->with('user')->where('status', 'Approved')->latest();

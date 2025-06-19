@@ -10,9 +10,12 @@ class SubcategoryController extends Controller
 {
     public function showBusinesses($slug)
     {
-        $subcategory = Subcategory::where('slug', $slug)->firstOrFail();
+        // Only show active subcategories
+        $subcategory = Subcategory::where('slug', $slug)
+            ->where('is_active', 1)
+            ->firstOrFail();
 
-        $businesses = Property::where('subcategory', $subcategory->name)
+        $businesses = Property::where('subcategory', $subcategory->id)
             ->where('status', 'Approved')
             ->paginate(12);
 

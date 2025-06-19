@@ -35,7 +35,8 @@ class ReviewInvitationController extends Controller
         }
 
         // Get active plan and email limit
-        $activePlan = $property->getActivePlan();
+        $activePlanPayment = $property->getActivePlan();
+        $activePlan = $activePlanPayment ? $activePlanPayment->plan : null;
         $emailLimit = $this->getEmailLimit($activePlan);
 
         // Get emails used this month
@@ -53,6 +54,7 @@ class ReviewInvitationController extends Controller
             'invitations',
             'property',
             'activePlan',
+            'activePlanPayment',
             'emailLimit',
             'emailsUsed'
         ));
@@ -78,7 +80,8 @@ class ReviewInvitationController extends Controller
         }
 
         // Check active plan
-        $activePlan = $property->getActivePlan();
+        $activePlanPayment = $property->getActivePlan();
+        $activePlan = $activePlanPayment ? $activePlanPayment->plan : null;
 
         // If Free plan, redirect with message
         if (!$activePlan || $activePlan->name === 'Free') {
@@ -122,7 +125,8 @@ class ReviewInvitationController extends Controller
         }
 
         // Check if there's room for more emails this month
-        $activePlan = $property->getActivePlan();
+        $activePlanPayment = $property->getActivePlan();
+        $activePlan = $activePlanPayment ? $activePlanPayment->plan : null;
         $emailLimit = $this->getEmailLimit($activePlan);
 
         $emailsUsed = ReviewInvitation::where('property_id', $propertyId)
@@ -158,7 +162,8 @@ class ReviewInvitationController extends Controller
         }
 
         // Check if there's room for more emails this month
-        $activePlan = $property->getActivePlan();
+        $activePlanPayment = $property->getActivePlan();
+        $activePlan = $activePlanPayment ? $activePlanPayment->plan : null;
         $emailLimit = $this->getEmailLimit($activePlan);
 
         $emailsUsed = ReviewInvitation::where('property_id', $propertyId)
@@ -213,7 +218,7 @@ class ReviewInvitationController extends Controller
                 $invitation->customer_name,
                 $property->business_name,
                 $invitation->message, // This should remain the same in your controller
-                url('/review/' . $invitation->invitation_token),
+                url('/property/' . $property->id . '?invitation=' . $invitation->id),
                 $invitation->id
             );
 
@@ -363,7 +368,7 @@ class ReviewInvitationController extends Controller
                 $invitation->customer_name,
                 $property->business_name,
                 $invitation->message,
-                url('/review/' . $invitation->invitation_token),
+                url('/property/' . $property->id . '?invitation=' . $invitation->id),
                 $invitation->id
             ));
 
@@ -419,7 +424,8 @@ class ReviewInvitationController extends Controller
         }
 
         // Check if there's room for more emails this month
-        $activePlan = $property->getActivePlan();
+        $activePlanPayment = $property->getActivePlan();
+        $activePlan = $activePlanPayment ? $activePlanPayment->plan : null;
         $emailLimit = $this->getEmailLimit($activePlan);
 
         $emailsUsed = ReviewInvitation::where('property_id', $propertyId)
@@ -506,7 +512,7 @@ class ReviewInvitationController extends Controller
                     $name,
                     $property->business_name,
                     $message,
-                    url('/review/' . $invitation->invitation_token),
+                    url('/property/' . $property->id . '?invitation=' . $invitation->id),
                     $invitation->id
                 );
 
@@ -558,7 +564,14 @@ class ReviewInvitationController extends Controller
             return 0; // Default to 0 emails if no plan
         }
 
-        switch ($plan->name) {
+        // If $plan is a Payment object, get the actual plan
+        if (isset($plan->plan)) {
+            $planName = $plan->plan->name;
+        } else {
+            $planName = $plan->name ?? '';
+        }
+
+        switch ($planName) {
             case 'Free':
                 return 0; // Free plan: 0 emails per month
             case 'Basic':

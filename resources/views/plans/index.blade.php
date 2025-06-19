@@ -11,7 +11,38 @@
 @endpush
 
 @section('content')
-    <!-- Plan Comparison Section -->
+    <!-- Location Access Required Modal -->
+    <div id="locationModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-md mx-4">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900 mb-4">
+                    <i class="fas fa-map-marker-alt text-blue-600 dark:text-blue-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Location Access Required
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                    We need access to your location to show you the most relevant pricing plans for your region. This helps us provide accurate pricing based on your country.
+                </p>
+                <div class="flex flex-col space-y-3">
+                    <button
+                        id="enableLocationBtn"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                    >
+                        <i class="fas fa-location-arrow mr-2"></i>
+                        Enable Location Access
+                    </button>
+                    <p class="text-xs text-gray-400 dark:text-gray-500">
+                        Your location data is only used for pricing and is not stored or shared.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content (Hidden until location access is granted) -->
+    <div id="mainContent" class="hidden">
+        <!-- Plan Comparison Section -->
     @php
         // Map the plan names to suitable Font Awesome icons.
         $planIcons = [
@@ -258,6 +289,7 @@
         </table>
       </div>
     </section>
+    </div> <!-- End of mainContent -->
 
     <!-- Hidden debugging elements -->
     <p id="user-coordinates" style="display: none;"></p>
@@ -266,23 +298,38 @@
 @endsection
 
 @push('scripts')
-    <!-- JavaScript to filter plan cards by country (prices remain as stored in the database) -->
+    <!-- JavaScript to handle location access and filter plan cards by country -->
     <script>
-      // Allowed plan IDs based on country
-      const sriLankaPlans = ['1', '2', '3', '4'];
-      const otherPlans   = ['1', '5', '6', '7'];
+      // Allowed plan IDs based on country (using numbers for better comparison)
+      const sriLankaPlans = [1, 5, 6, 7];
+      const otherPlans   = [1, 2, 3, 4];
+
+      // Function to show main content and hide location modal
+      function showMainContent() {
+        document.getElementById('locationModal').style.display = 'none';
+        document.getElementById('mainContent').classList.remove('hidden');
+      }
+
+      // Function to show location modal and hide main content
+      function showLocationModal() {
+        document.getElementById('locationModal').style.display = 'flex';
+        document.getElementById('mainContent').classList.add('hidden');
+      }
 
       // Function to filter plan cards by allowed IDs
       function filterPlans(allowedIds) {
         console.log('Filtering plans with IDs:', allowedIds);
         document.querySelectorAll('.plan-card').forEach(function(card) {
-          const planId = card.getAttribute('data-plan-id');
+          const planId = parseInt(card.getAttribute('data-plan-id'));
+          console.log('Checking plan card with ID:', planId, 'against allowed IDs:', allowedIds);
           if (allowedIds.includes(planId)) {
             card.style.display = 'block';
             card.style.visibility = 'visible';
+            console.log('Showing plan card:', planId);
           } else {
             card.style.display = 'none';
             card.style.visibility = 'hidden';
+            console.log('Hiding plan card:', planId);
           }
         });
       }
@@ -291,7 +338,8 @@
       function filterComparisonColumns(allowedIds) {
         console.log('Filtering comparison columns with IDs:', allowedIds);
         document.querySelectorAll('.comparison-col').forEach(function(col) {
-          const planId = col.getAttribute('data-plan-id');
+          const planId = parseInt(col.getAttribute('data-plan-id'));
+          console.log('Checking comparison column with ID:', planId, 'against allowed IDs:', allowedIds);
           if (allowedIds.includes(planId)) {
             col.style.display = 'table-cell';
             col.style.visibility = 'visible';
@@ -303,7 +351,7 @@
 
         // Also filter the price cells in the comparison table
         document.querySelectorAll('.price-cell').forEach(function(cell) {
-          const planId = cell.getAttribute('data-plan-id');
+          const planId = parseInt(cell.getAttribute('data-plan-id'));
           if (allowedIds.includes(planId)) {
             cell.style.display = 'table-cell';
             cell.style.visibility = 'visible';
@@ -314,72 +362,81 @@
         });
       }
 
-      // Initialize with default plans (other plans) until geolocation completes
-      console.log('Initializing with default plans...');
-      filterPlans(otherPlans);
-      filterComparisonColumns(otherPlans);
+      // Function to request location access
+      function requestLocationAccess() {
+        if (navigator.geolocation) {
+          console.log('Geolocation is supported, requesting location...');
+          navigator.geolocation.getCurrentPosition(function(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            const altitude = position.coords.altitude; // may be null
 
-      // Geolocation and Reverse Geocoding via Nominatim
-      if (navigator.geolocation) {
-        console.log('Geolocation is supported, requesting location...');
-        navigator.geolocation.getCurrentPosition(function(position) {
-          const latitude = position.coords.latitude;
-          const longitude = position.coords.longitude;
-          const altitude = position.coords.altitude; // may be null
+            // Log coordinates and altitude for debugging
+            console.log('User coordinates:', latitude, longitude);
+            document.getElementById('user-coordinates').innerText = `Latitude: ${latitude}, Longitude: ${longitude}`;
+            document.getElementById('user-altitude').innerText = altitude !== null ? `Altitude: ${altitude} meters` : "Altitude not available";
 
-          // Log coordinates and altitude for debugging
-          console.log('User coordinates:', latitude, longitude);
-          document.getElementById('user-coordinates').innerText = `Latitude: ${latitude}, Longitude: ${longitude}`;
-          document.getElementById('user-altitude').innerText = altitude !== null ? `Altitude: ${altitude} meters` : "Altitude not available";
+            // Show main content after getting location
+            showMainContent();
 
-          // Reverse geocode using Nominatim
-          console.log('Fetching country information...');
-          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
-            .then(response => response.json())
-            .then(data => {
-              console.log('Nominatim response:', data);
-              if (data && data.address && data.address.country) {
-                const country = data.address.country;
-                document.getElementById('user-country').innerText = country;
-                console.log("Country detected:", country);
+            // Reverse geocode using Nominatim
+            console.log('Fetching country information...');
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+              .then(response => response.json())
+              .then(data => {
+                console.log('Nominatim response:', data);
+                if (data && data.address && data.address.country) {
+                  const country = data.address.country;
+                  document.getElementById('user-country').innerText = country;
+                  console.log("Country detected:", country);
 
-                // Filter plans based on country without altering database prices.
-                if (country === "Sri Lanka" || country === "ශ්‍රී ලංකාව") {
-                  console.log('Showing Sri Lanka plans:', sriLankaPlans);
-                  filterPlans(sriLankaPlans);
-                  filterComparisonColumns(sriLankaPlans);
+                  // Filter plans based on country without altering database prices.
+                  if (country === "Sri Lanka" || country === "ශ්‍රී ලංකාව") {
+                    console.log('Showing Sri Lanka plans:', sriLankaPlans);
+                    filterPlans(sriLankaPlans);
+                    filterComparisonColumns(sriLankaPlans);
+                  } else {
+                    console.log('Showing other country plans:', otherPlans);
+                    filterPlans(otherPlans);
+                    filterComparisonColumns(otherPlans);
+                  }
                 } else {
-                  console.log('Showing other country plans:', otherPlans);
+                  console.log('No country found in response, showing other plans');
                   filterPlans(otherPlans);
                   filterComparisonColumns(otherPlans);
                 }
-              } else {
-                console.log('No country found in response, showing other plans');
+              })
+              .catch(error => {
+                console.error('Reverse geocoding error:', error);
+                console.log('Error occurred, showing other plans');
                 filterPlans(otherPlans);
                 filterComparisonColumns(otherPlans);
-              }
-            })
-            .catch(error => {
-              console.error('Reverse geocoding error:', error);
-              console.log('Error occurred, showing other plans');
-              filterPlans(otherPlans);
-              filterComparisonColumns(otherPlans);
-            });
-        }, function(error) {
-          console.error('Geolocation error:', error);
-          console.log('Geolocation failed, showing other plans');
+              });
+          }, function(error) {
+            console.error('Geolocation error:', error);
+            alert('Location access was denied or failed. Please enable location access and refresh the page to view pricing plans.');
+            // Keep showing the location modal if access is denied
+            showLocationModal();
+          }, {
+            timeout: 10000, // 10 second timeout
+            enableHighAccuracy: true,
+            maximumAge: 300000 // 5 minutes
+          });
+        } else {
+          console.error("Geolocation is not supported by this browser.");
+          alert('Geolocation is not supported by your browser. Please use a modern browser to access this page.');
+          // Show other plans if geolocation is not supported
+          showMainContent();
           filterPlans(otherPlans);
           filterComparisonColumns(otherPlans);
-        }, {
-          timeout: 10000, // 10 second timeout
-          enableHighAccuracy: true,
-          maximumAge: 300000 // 5 minutes
-        });
-      } else {
-        console.error("Geolocation is not supported by this browser.");
-        console.log('Geolocation not supported, showing other plans');
-        filterPlans(otherPlans);
-        filterComparisonColumns(otherPlans);
+        }
       }
+
+      // Event listener for enable location button
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('enableLocationBtn').addEventListener('click', function() {
+          requestLocationAccess();
+        });
+      });
     </script>
 @endpush

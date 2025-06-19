@@ -29,9 +29,7 @@ class ProductController extends Controller
         if (!$property) {
             return redirect()->route('property.dashboard')
                 ->with('error', 'Property not found.');
-        }
-
-        // Get active plan
+        }        // Get active plan
         $activePlan = $property->getActivePlan();
         $productLimit = $property->getProductLimit();
         $currentProductCount = $property->products()->count();

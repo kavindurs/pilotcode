@@ -32,7 +32,7 @@ class RateController extends Controller
         $rate->user_id = Auth::id();
         $rate->save();
 
-        return redirect()->route('properties.subcategory', $property->subcategory)
+        return redirect()->route('categories.index')
             ->with('success', 'Your review has been submitted and is pending approval.');
     }
 

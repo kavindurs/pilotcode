@@ -38,41 +38,47 @@
                     <div class="absolute left-0 z-50 w-[500px] p-6 mt-4 bg-white border border-gray-100 rounded-xl shadow-lg transform opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-in-out">
                         <div class="grid grid-cols-2 gap-6">
                             <div>
-                                <h3 class="text-sm font-semibold text-gray-900 uppercase mb-4">Popular Categories</h3>
+                                <h3 class="text-sm font-semibold text-gray-900 uppercase mb-4">Popular Subcategories</h3>
                                 <ul class="space-y-3">
                                     <li>
-                                        <a href="/category/banks" class="flex items-center text-gray-600 hover:text-blue-600">
-                                            <i class="fas fa-university w-5 h-5 mr-3 text-blue-600"></i>
-                                            Banks & Finance
+                                        <a href="{{ route('properties.subcategory', 20) }}" class="flex items-center text-gray-600 hover:text-blue-600">
+                                            <i class="fas fa-taxi w-5 h-5 mr-3 text-blue-600"></i>
+                                            Taxis & Public Transport
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="/category/restaurants" class="flex items-center text-gray-600 hover:text-blue-600">
-                                            <i class="fas fa-utensils w-5 h-5 mr-3 text-blue-600"></i>
-                                            Restaurants
+                                        <a href="{{ route('properties.subcategory', 17) }}" class="flex items-center text-gray-600 hover:text-blue-600">
+                                            <i class="fas fa-car w-5 h-5 mr-3 text-blue-600"></i>
+                                            Cars & Trucks
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="/category/shopping" class="flex items-center text-gray-600 hover:text-blue-600">
-                                            <i class="fas fa-shopping-bag w-5 h-5 mr-3 text-blue-600"></i>
-                                            Shopping
+                                        <a href="{{ route('properties.subcategory', 5) }}" class="flex items-center text-gray-600 hover:text-blue-600">
+                                            <i class="fas fa-paw w-5 h-5 mr-3 text-blue-600"></i>
+                                            Pet Services
                                         </a>
                                     </li>
                                 </ul>
                             </div>
                             <div>
-                                <h3 class="text-sm font-semibold text-gray-900 uppercase mb-4">Browse By</h3>
+                                <h3 class="text-sm font-semibold text-gray-900 uppercase mb-4">More Categories</h3>
                                 <ul class="space-y-3">
                                     <li>
-                                        <a href="/categories/trending" class="flex items-center text-gray-600 hover:text-blue-600">
-                                            <i class="fas fa-chart-line w-5 h-5 mr-3 text-blue-600"></i>
-                                            Trending Now
+                                        <a href="{{ route('properties.subcategory', 10) }}" class="flex items-center text-gray-600 hover:text-blue-600">
+                                            <i class="fas fa-shield-alt w-5 h-5 mr-3 text-blue-600"></i>
+                                            Insurance
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="/categories/new" class="flex items-center text-gray-600 hover:text-blue-600">
-                                            <i class="fas fa-star w-5 h-5 mr-3 text-blue-600"></i>
-                                            New Additions
+                                        <a href="{{ route('properties.subcategory', 4) }}" class="flex items-center text-gray-600 hover:text-blue-600">
+                                            <i class="fas fa-horse w-5 h-5 mr-3 text-blue-600"></i>
+                                            Horses & Riding
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('properties.subcategory', 3) }}" class="flex items-center text-gray-600 hover:text-blue-600">
+                                            <i class="fas fa-dog w-5 h-5 mr-3 text-blue-600"></i>
+                                            Cats & Dogs
                                         </a>
                                     </li>
                                 </ul>
@@ -179,29 +185,45 @@
 
                         <!-- Mobile Categories -->
                         <div class="py-2" x-data="{ isOpen: false }">
-
                             <button @click="isOpen = !isOpen" class="flex items-center justify-between w-full text-base font-medium text-black">
-                                <a href="{{ route('categories.index') }}" class="flex items-center justify-between w-full text-base font-medium text-black hover:text-blue-600">
-                                <span>Categories</span>
+                                <a href="{{ route('categories.index') }}" class="text-base font-medium text-black hover:text-blue-600">
+                                    <span>Categories</span>
                                 </a>
                                 <svg class="w-4 h-4" :class="{'rotate-180': isOpen}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
-                        </a>
 
                             <div x-show="isOpen" class="mt-2 space-y-2 pl-4">
                                 <!-- Mobile Category Items -->
-                                <a href="/category/banks" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
-                                    <i class="fas fa-university w-4 h-4 mr-3 text-blue-600"></i>
-                                    Banks & Finance
+                                <a href="{{ route('properties.subcategory', 20) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
+                                    <i class="fas fa-taxi w-4 h-4 mr-3 text-blue-600"></i>
+                                    Taxis & Public Transport
                                 </a>
-                                <!-- Add more mobile category items -->
+                                <a href="{{ route('properties.subcategory', 17) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
+                                    <i class="fas fa-car w-4 h-4 mr-3 text-blue-600"></i>
+                                    Cars & Trucks
+                                </a>
+                                <a href="{{ route('properties.subcategory', 5) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
+                                    <i class="fas fa-paw w-4 h-4 mr-3 text-blue-600"></i>
+                                    Pet Services
+                                </a>
+                                <a href="{{ route('properties.subcategory', 10) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
+                                    <i class="fas fa-shield-alt w-4 h-4 mr-3 text-blue-600"></i>
+                                    Insurance
+                                </a>
+                                <a href="{{ route('properties.subcategory', 4) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
+                                    <i class="fas fa-horse w-4 h-4 mr-3 text-blue-600"></i>
+                                    Horses & Riding
+                                </a>
+                                <a href="{{ route('properties.subcategory', 3) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
+                                    <i class="fas fa-dog w-4 h-4 mr-3 text-blue-600"></i>
+                                    Cats & Dogs
+                                </a>
                             </div>
                         </div>
 
-                        <a href="#" class="py-2 text-base font-medium text-black hover:text-blue-600">Write a Review</a>
-                        <a href="#" class="py-2 text-base font-medium text-black hover:text-blue-600">Sign in</a>
+                        <a href="{{ route('review') }}" class="py-2 text-base font-medium text-black hover:text-blue-600">Write a Review</a>
 
                         <!-- Mobile Profile Menu Items -->
                         <a href="{{ route('profile.show') }}" class="py-2 text-base font-medium text-gray-700 hover:text-blue-600">
@@ -227,8 +249,8 @@
                 </div>
 
                 <div class="px-6 mt-6">
-                    <a href="#" class="inline-flex justify-center w-full px-4 py-3 text-base font-semibold text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
-                        Business owner
+                    <a href="{{ route('register.show') }}" class="inline-flex justify-center w-full px-4 py-3 text-base font-semibold text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
+                        For Business
                     </a>
                 </div>
             </nav>

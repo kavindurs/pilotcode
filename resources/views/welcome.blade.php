@@ -38,7 +38,7 @@
 
             <!-- Property Comparison Tool -->
             <div class="py-12">
-                @include('components.property-comparison')
+                @include('components.property-comparison-simple')
             </div>
 
             @php

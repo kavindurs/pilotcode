@@ -25,5 +25,7 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'premium.plan' => \App\Http\Middleware\CheckPremiumPlan::class,
+        '2fa' => \App\Http\Middleware\EnsureTwoFactorAuthentication::class,
+        'email.verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
     ];
 }

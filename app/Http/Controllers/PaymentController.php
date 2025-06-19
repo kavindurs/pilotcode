@@ -192,7 +192,7 @@ class PaymentController extends Controller
                 // Create new payment record only if no existing record found for this property/customer
                 $payment = Payment::create([
                     'user_id' => null,
-                    'property_id' => $PropertyId, // Store property ID from session
+                    'property_id' => $propertyId, // Store property ID from session
                     'business_email' => $request->customer_email,
                     'plan_id' => $plan->id,
                     'order_id' => $orderId,

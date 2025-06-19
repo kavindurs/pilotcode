@@ -14,7 +14,7 @@ class PropertyComparisonController extends Controller
      */
     public function getProperties(Request $request)
     {
-        $query = Property::select('id', 'business_name', 'category', 'city', 'country')
+        $query = Property::select('id', 'business_name', 'category', 'subcategory', 'city', 'country')
             ->where('status', 'Approved');
 
         // If search term is provided, filter by business name
@@ -31,14 +31,24 @@ class PropertyComparisonController extends Controller
             }
         }
 
+        // If subcategory is provided, filter by subcategory ID
+        if ($request->has('subcategory') && !empty($request->subcategory)) {
+            $query->where('subcategory', $request->subcategory);
+        }
+
         $properties = $query->orderBy('business_name')->take(20)->get();
 
         // Add category names to the response by looking up categories
         $categoryIds = $properties->pluck('category')->unique()->filter();
         $categories = \App\Models\Category::whereIn('id', $categoryIds)->pluck('name', 'id');
 
-        $properties->each(function($property) use ($categories) {
+        // Add subcategory names
+        $subcategoryIds = $properties->pluck('subcategory')->unique()->filter();
+        $subcategories = \App\Models\Subcategory::whereIn('id', $subcategoryIds)->pluck('name', 'id');
+
+        $properties->each(function($property) use ($categories, $subcategories) {
             $property->category_name = $categories[$property->category] ?? 'Unknown';
+            $property->subcategory_name = $subcategories[$property->subcategory] ?? null;
         });
 
         return response()->json($properties);
@@ -108,7 +118,7 @@ class PropertyComparisonController extends Controller
             $property->subcategory_name = null;
         }
 
-        // Get review statistics
+        // Get review statistics with enhanced analysis
         $reviewStats = Rate::where('property_id', $propertyId)
             ->where('status', 'Approved')
             ->selectRaw('
@@ -118,7 +128,10 @@ class PropertyComparisonController extends Controller
                 SUM(CASE WHEN rate = 4 THEN 1 ELSE 0 END) as four_star,
                 SUM(CASE WHEN rate = 3 THEN 1 ELSE 0 END) as three_star,
                 SUM(CASE WHEN rate = 2 THEN 1 ELSE 0 END) as two_star,
-                SUM(CASE WHEN rate = 1 THEN 1 ELSE 0 END) as one_star
+                SUM(CASE WHEN rate = 1 THEN 1 ELSE 0 END) as one_star,
+                SUM(CASE WHEN rate >= 4 THEN 1 ELSE 0 END) as positive_reviews,
+                SUM(CASE WHEN rate = 3 THEN 1 ELSE 0 END) as neutral_reviews,
+                SUM(CASE WHEN rate <= 2 THEN 1 ELSE 0 END) as negative_reviews
             ')
             ->first();
 
@@ -130,8 +143,16 @@ class PropertyComparisonController extends Controller
             ->take(3)
             ->get();
 
+        // Get products for this property
+        $products = \App\Models\Product::where('property_id', $propertyId)
+            ->select('id', 'name', 'category', 'price', 'stock_quantity')
+            ->orderBy('created_at', 'desc')
+            ->take(10) // Limit to 10 products for comparison
+            ->get();
+
         $property->review_stats = $reviewStats;
         $property->latest_reviews = $latestReviews;
+        $property->products = $products;
 
         return $property;
     }

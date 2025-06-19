@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
+use PragmaRX\Google2FA\Google2FA;
 
 class ProfileController extends Controller
 {
@@ -143,5 +144,112 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/')->with('success', 'Your account has been permanently deleted.');
+    }
+
+    /**
+     * Enable two-factor authentication for the user.
+     */
+    public function enableTwoFactor(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->two_factor_enabled) {
+            return response()->json(['error' => 'Two-factor authentication is already enabled.'], 400);
+        }
+
+        // Generate a new secret key
+        $secret = app('pragmarx.google2fa')->generateSecretKey();
+
+        $user->two_factor_secret = $secret;
+        $user->save();
+
+        // Generate QR code
+        $qrCode = app('pragmarx.google2fa')->getQRCodeInline(
+            config('app.name'),
+            $user->email,
+            $secret
+        );
+
+        return response()->json([
+            'secret' => $secret,
+            'qr_code' => $qrCode
+        ]);
+    }
+
+    /**
+     * Confirm two-factor authentication setup.
+     */
+    public function confirmTwoFactor(Request $request)
+    {
+        $request->validate([
+            'code' => ['required', 'string', 'size:6'],
+        ]);
+
+        $user = Auth::user();
+
+        if (!$user->two_factor_secret) {
+            return redirect()->back()->with('error', 'Two-factor authentication is not set up.');
+        }
+
+        $valid = app('pragmarx.google2fa')->verifyKey($user->two_factor_secret, $request->code);
+
+        if (!$valid) {
+            return redirect()->back()->with('error', 'Invalid verification code. Please try again.');
+        }
+
+        // Enable 2FA and generate recovery codes
+        $user->two_factor_enabled = true;
+        $user->two_factor_confirmed_at = now();
+        $user->save();
+
+        $recoveryCodes = $user->generateRecoveryCodes();
+
+        return redirect()->back()->with([
+            'success' => 'Two-factor authentication has been enabled successfully!',
+            'recovery_codes' => $recoveryCodes
+        ]);
+    }
+
+    /**
+     * Disable two-factor authentication.
+     */
+    public function disableTwoFactor(Request $request)
+    {
+        $request->validate([
+            'password' => ['required', 'string', 'current_password'],
+        ]);
+
+        $user = Auth::user();
+
+        $user->two_factor_enabled = false;
+        $user->two_factor_secret = null;
+        $user->two_factor_recovery_codes = null;
+        $user->two_factor_confirmed_at = null;
+        $user->save();
+
+        return redirect()->back()->with('success', 'Two-factor authentication has been disabled.');
+    }
+
+    /**
+     * Generate new recovery codes.
+     */
+    public function generateRecoveryCodes(Request $request)
+    {
+        $request->validate([
+            'password' => ['required', 'string', 'current_password'],
+        ]);
+
+        $user = Auth::user();
+
+        if (!$user->hasTwoFactorEnabled()) {
+            return redirect()->back()->with('error', 'Two-factor authentication is not enabled.');
+        }
+
+        $recoveryCodes = $user->generateRecoveryCodes();
+
+        return redirect()->back()->with([
+            'success' => 'New recovery codes have been generated.',
+            'recovery_codes' => $recoveryCodes
+        ]);
     }
 }

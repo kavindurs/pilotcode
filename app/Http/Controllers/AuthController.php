@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -13,8 +13,11 @@ use Laravel\Socialite\Facades\Socialite;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OTPMail;
+use App\Http\Controllers\ReferralController;
 
-class RegisterController extends Controller
+class AuthController extends Controller
 {
     // ...existing code...
 
@@ -64,12 +67,32 @@ class RegisterController extends Controller
                 'password' => Hash::make($request->password),
                 'profile_picture' => $profilePicturePath,
                 'country' => $country,
-                'user_type' => 'regular user'
+                'user_type' => 'regular user',
+                'is_verified' => false, // User needs to verify email first
+                'referred_by' => $request->get('ref') // Store referral code if provided
             ]);
 
-            Auth::login($user);
+            // Process referral if code was provided
+            if ($request->has('ref') && !empty($request->ref)) {
+                ReferralController::processReferral($request->ref, $user->id);
+            }
 
-            return redirect()->intended('dashboard');
+            // Generate and send OTP for email verification
+            try {
+                $otp = $user->generateEmailOtp();
+                $firstName = explode(' ', $user->name)[0];
+                Mail::to($user->email)->send(new OTPMail($firstName, $otp));
+
+                // Store user ID in session for OTP verification
+                $request->session()->put('pending_user_id', $user->id);
+
+                return redirect()->route('otp.verify.form')->with('success', 'Registration successful! Please check your email for the verification code.');
+            } catch (Exception $e) {
+                Log::error('OTP generation error during registration: ' . $e->getMessage());
+                // If OTP sending fails, still proceed with auto-login (fallback)
+                Auth::login($user);
+                return redirect()->intended('dashboard')->with('warning', 'Registration successful but email verification failed. Please verify your email later.');
+            }
         } catch (\Exception $e) {
             Log::error('Registration error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Registration failed. Please try again.'])->withInput();
@@ -77,24 +100,7 @@ class RegisterController extends Controller
     }
 
     // ...existing code...
-}
 
-namespace App\Http\Controllers;
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Auth\Events\PasswordReset;
-use Laravel\Socialite\Facades\Socialite;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
-use App\Models\User;
-use Exception;
-use App\Http\Controllers\ReferralController;
-
-class AuthController extends Controller
-{
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -103,7 +109,36 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($credentials)) {
+            $user = Auth::user();
             $request->session()->regenerate();
+
+            // Check if user needs email verification (for non-Google users)
+            if (!$user->google_id && !$user->hasVerifiedEmail()) {
+                Auth::logout();
+
+                // Check if user has a valid OTP
+                if (!$user->hasValidOtp()) {
+                    try {
+                        $otp = $user->generateEmailOtp();
+                        $firstName = explode(' ', $user->name)[0];
+                        Mail::to($user->email)->send(new OTPMail($firstName, $otp));
+                    } catch (Exception $e) {
+                        Log::error('OTP generation error during login: ' . $e->getMessage());
+                        return back()->withErrors(['email' => 'Unable to send verification email. Please try again.']);
+                    }
+                }
+
+                $request->session()->put('pending_user_id', $user->id);
+                return redirect()->route('otp.verify.form')->withErrors(['email' => 'Please verify your email before logging in.']);
+            }
+
+            // Check if user has 2FA enabled
+            if ($user->two_factor_secret) {
+                $request->session()->put('2fa_user_id', $user->id);
+                Auth::logout();
+                return redirect()->route('two-factor.challenge');
+            }
+
             return redirect()->route('dashboard');
         }
 
@@ -173,7 +208,7 @@ class AuthController extends Controller
                 ? redirect()->route('login')->with('status', __($status))
                 : back()->withErrors(['email' => __($status)]);
         } catch (\Exception $e) {
-            \Log::error('Password reset error: ' . $e->getMessage());
+            Log::error('Password reset error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Password reset failed. Please try again.']);
         }
     }
@@ -186,7 +221,7 @@ class AuthController extends Controller
     public function handleGoogleCallback()
     {
         try {
-            $googleUser = Socialite::driver('google')->stateless()->user();
+            $googleUser = Socialite::driver('google')->user();
 
             // Extract domain from email for country detection
             $emailDomain = substr(strrchr($googleUser->email, "@"), 1);
@@ -234,70 +269,6 @@ class AuthController extends Controller
         }
     }
 
-    public function register(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'profile_picture' => 'required|image|mimes:jpeg,png,jpg|max:2048'
-        ]);
-
-        try {
-            // Create directory if it doesn't exist
-            if (!file_exists(storage_path('app/public/profile_pictures'))) {
-                mkdir(storage_path('app/public/profile_pictures'), 0777, true);
-            }
-
-            // Handle profile picture upload
-            $profilePicturePath = null;
-            if ($request->hasFile('profile_picture')) {
-                $image = $request->file('profile_picture');
-                // Generate a unique filename
-                $filename = time() . '_' . $image->getClientOriginalName();
-                // Store the image on the 'public' disk inside the "profile_pictures" folder
-                // This will save the file to storage/app/public/profile_pictures
-                $path = $image->storeAs('profile_pictures', $filename, 'public');
-                // Save the relative path (without any extra "public/" prefix) in the database
-                $profilePicturePath = 'profile_pictures/' . $filename;
-            }
-
-            // Extract domain from email for country detection (if needed)
-            $emailDomain = substr(strrchr($request->email, "@"), 1);
-            $country = 'Unknown';
-            if (str_ends_with($emailDomain, '.lk')) {
-                $country = 'Sri Lanka';
-            } elseif (str_ends_with($emailDomain, '.in')) {
-                $country = 'India';
-            } elseif (str_ends_with($emailDomain, '.uk')) {
-                $country = 'United Kingdom';
-            }
-
-            // Create the new user with the profile picture path saved
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'profile_picture' => $profilePicturePath,
-                'country' => $country,
-                'user_type' => 'regular user',
-                'referred_by' => $request->get('ref') // Store referral code if provided
-            ]);
-
-            // Process referral if code was provided
-            if ($request->has('ref') && !empty($request->ref)) {
-                ReferralController::processReferral($request->ref, $user->id);
-            }
-
-            Auth::login($user);
-
-            return redirect()->intended('dashboard');
-        } catch (\Exception $e) {
-            \Log::error('Registration error: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Registration failed. Please try again.'])->withInput();
-        }
-    }
-
     public function updateProfilePicture(Request $request)
     {
         $request->validate([
@@ -336,6 +307,183 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             Log::error('Profile picture update error: ' . $e->getMessage());
             return back()->with('error', 'Failed to update profile picture');
+        }
+    }
+
+    /**
+     * Show OTP verification form.
+     */
+    public function showOtpVerificationForm(Request $request)
+    {
+        $userId = $request->session()->get('pending_user_id');
+
+        if (!$userId) {
+            return redirect()->route('register.show')->withErrors(['error' => 'No pending registration found.']);
+        }
+
+        $user = User::find($userId);
+
+        if (!$user || $user->is_verified) {
+            return redirect()->route('login')->with('success', 'Account already verified. Please login.');
+        }
+
+        return view('auth.otp-verification', compact('user'))->with([
+            'email' => $user->email,
+            'can_resend' => true // Allow resending OTP
+        ]);
+    }
+
+    /**
+     * Verify OTP.
+     */
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'otp' => 'required|string|size:6',
+        ]);
+
+        $userId = $request->session()->get('pending_user_id');
+
+        if (!$userId) {
+            return redirect()->route('register.show')->withErrors(['error' => 'No pending registration found.']);
+        }
+
+        $user = User::find($userId);
+
+        if (!$user) {
+            return redirect()->route('register.show')->withErrors(['error' => 'User not found.']);
+        }
+
+        if ($user->verifyEmailOtp($request->otp)) {
+            // OTP verified successfully
+            $user->is_verified = true;
+            $user->email_verified_at = now();
+            $user->save();
+            $user->clearEmailOtp();
+
+            // Remove from session
+            $request->session()->forget('pending_user_id');
+
+            // Auto-login the user
+            Auth::login($user);
+
+            return redirect()->route('dashboard')->with('success', 'Email verified successfully! Welcome to your dashboard.');
+        } else {
+            return back()->withErrors(['otp' => 'Invalid or expired OTP. Please try again.']);
+        }
+    }
+
+    /**
+     * Resend OTP.
+     */
+    public function resendOtp(Request $request)
+    {
+        $userId = $request->session()->get('pending_user_id');
+
+        if (!$userId) {
+            return response()->json(['success' => false, 'message' => 'No pending registration found.'], 400);
+        }
+
+        $user = User::find($userId);
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not found.'], 400);
+        }
+
+        if ($user->is_verified) {
+            return response()->json(['success' => false, 'message' => 'Account already verified.'], 400);
+        }
+
+        try {
+            $otp = $user->generateEmailOtp();
+            $firstName = explode(' ', $user->name)[0];
+            Mail::to($user->email)->send(new OTPMail($firstName, $otp));
+
+            return response()->json(['success' => true, 'message' => 'OTP resent successfully.']);
+        } catch (Exception $e) {
+            Log::error('OTP resend error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to resend OTP.'], 500);
+        }
+    }
+
+    /**
+     * Handle business registration.
+     */
+    public function registerBusiness(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'company_name' => 'required|string|max:255',
+        ]);
+
+        try {
+            // Create directory if it doesn't exist
+            if (!file_exists(storage_path('app/public/profile_pictures'))) {
+                mkdir(storage_path('app/public/profile_pictures'), 0777, true);
+            }
+
+            // Handle profile picture upload
+            $profilePicturePath = null;
+            if ($request->hasFile('profile_picture')) {
+                $image = $request->file('profile_picture');
+                $filename = time() . '_' . $image->getClientOriginalName();
+                $path = $image->storeAs('profile_pictures', $filename, 'public');
+                $profilePicturePath = 'profile_pictures/' . $filename;
+            }
+
+            // Extract domain from email for country detection
+            $emailDomain = substr(strrchr($request->email, "@"), 1);
+            $country = 'Unknown';
+            if (str_ends_with($emailDomain, '.lk')) {
+                $country = 'Sri Lanka';
+            } elseif (str_ends_with($emailDomain, '.in')) {
+                $country = 'India';
+            } elseif (str_ends_with($emailDomain, '.uk')) {
+                $country = 'United Kingdom';
+            }
+
+            // Create business user
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'profile_picture' => $profilePicturePath,
+                'country' => $country,
+                'user_type' => 'business owner',
+                'company_name' => $request->company_name,
+                'is_business' => true,
+                'is_verified' => false,
+                'referred_by' => $request->get('ref')
+            ]);
+
+            // Process referral if code was provided
+            if ($request->has('ref') && !empty($request->ref)) {
+                ReferralController::processReferral($request->ref, $user->id);
+            }
+
+            // Generate and send OTP for email verification
+            try {
+                $otp = $user->generateEmailOtp();
+                $firstName = explode(' ', $user->name)[0];
+                Mail::to($user->email)->send(new OTPMail($firstName, $otp));
+
+                // Store user ID in session for OTP verification
+                $request->session()->put('pending_user_id', $user->id);
+
+                return redirect()->route('otp.verify.form')->with('success', 'Business registration successful! Please check your email for the verification code.');
+            } catch (Exception $e) {
+                Log::error('OTP generation error during business registration: ' . $e->getMessage());
+                // If OTP sending fails, still proceed with auto-login (fallback)
+                Auth::login($user);
+                return redirect()->intended('dashboard')->with('warning', 'Business registration successful but email verification failed. Please verify your email later.');
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Business registration error: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Business registration failed. Please try again.'])->withInput();
         }
     }
 }

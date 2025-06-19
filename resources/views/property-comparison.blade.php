@@ -41,24 +41,24 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div class="text-center">
                         <div class="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-search text-blue-600 text-xl"></i>
+                            <i class="fas fa-filter text-blue-600 text-xl"></i>
                         </div>
-                        <h3 class="text-lg font-semibold mb-2">1. Search & Filter</h3>
-                        <p class="text-gray-600">Search for properties by name or filter by category to find the businesses you want to compare.</p>
+                        <h3 class="text-lg font-semibold mb-2">1. Select Category & Subcategory</h3>
+                        <p class="text-gray-600">Choose a category and then select a specific subcategory to find businesses in the same niche.</p>
                     </div>
                     <div class="text-center">
                         <div class="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                             <i class="fas fa-balance-scale text-green-600 text-xl"></i>
                         </div>
-                        <h3 class="text-lg font-semibold mb-2">2. Select & Compare</h3>
-                        <p class="text-gray-600">Choose two properties from the dropdown menus and click compare to see detailed side-by-side analysis.</p>
+                        <h3 class="text-lg font-semibold mb-2">2. Choose Two Properties</h3>
+                        <p class="text-gray-600">Select exactly two properties from the same subcategory to ensure fair and relevant comparisons.</p>
                     </div>
                     <div class="text-center">
                         <div class="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-chart-bar text-purple-600 text-xl"></i>
+                            <i class="fas fa-chart-line text-purple-600 text-xl"></i>
                         </div>
-                        <h3 class="text-lg font-semibold mb-2">3. Analyze Results</h3>
-                        <p class="text-gray-600">Review ratings, read recent reviews, and compare business details to make the best choice.</p>
+                        <h3 class="text-lg font-semibold mb-2">3. Analyze & Compare</h3>
+                        <p class="text-gray-600">Review detailed comparisons including ratings, products, review sentiment, and business details.</p>
                     </div>
                 </div>
             </div>
@@ -69,28 +69,28 @@
                     <div class="text-center">
                         <i class="fas fa-star text-yellow-500 text-2xl mb-3"></i>
                         <h3 class="font-semibold mb-2">Rating Analysis</h3>
-                        <p class="text-sm text-gray-600">Compare average ratings and rating distributions</p>
+                        <p class="text-sm text-gray-600">Compare average ratings and detailed rating distributions</p>
                     </div>
                 </div>
                 <div class="bg-white rounded-lg p-6 shadow">
                     <div class="text-center">
-                        <i class="fas fa-comments text-blue-500 text-2xl mb-3"></i>
-                        <h3 class="font-semibold mb-2">Recent Reviews</h3>
-                        <p class="text-sm text-gray-600">Read the latest customer feedback</p>
+                        <i class="fas fa-box text-purple-500 text-2xl mb-3"></i>
+                        <h3 class="font-semibold mb-2">Products & Services</h3>
+                        <p class="text-sm text-gray-600">View and compare products, pricing, and inventory</p>
                     </div>
                 </div>
                 <div class="bg-white rounded-lg p-6 shadow">
                     <div class="text-center">
-                        <i class="fas fa-info-circle text-green-500 text-2xl mb-3"></i>
-                        <h3 class="font-semibold mb-2">Business Details</h3>
-                        <p class="text-sm text-gray-600">View contact information and descriptions</p>
+                        <i class="fas fa-chart-pie text-green-500 text-2xl mb-3"></i>
+                        <h3 class="font-semibold mb-2">Review Sentiment</h3>
+                        <p class="text-sm text-gray-600">Analyze positive, negative, and neutral review patterns</p>
                     </div>
                 </div>
                 <div class="bg-white rounded-lg p-6 shadow">
                     <div class="text-center">
                         <i class="fas fa-trophy text-orange-500 text-2xl mb-3"></i>
                         <h3 class="font-semibold mb-2">Winner Analysis</h3>
-                        <p class="text-sm text-gray-600">See which property performs better</p>
+                        <p class="text-sm text-gray-600">See which property performs better across all metrics</p>
                     </div>
                 </div>
             </div>
