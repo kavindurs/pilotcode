@@ -399,4 +399,12 @@ class Property extends Model
 
         return false;
     }
+
+    /**
+     * Get the ads for this property.
+     */
+    public function ads()
+    {
+        return $this->hasMany(Ad::class);
+    }
 }

@@ -189,13 +189,12 @@
 
             <!-- Ads Manager Tab -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-ads-manager', '')">
-              <span class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200 cursor-not-allowed opacity-75">
+              <a href="{{ route('property.ads.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-blue-900 group-hover:bg-blue-700 rounded-md transition-colors mr-3">
                   <i class="fas fa-bullhorn text-blue-300 group-hover:text-yellow-400 transition-colors"></i>
                 </span>
                 <span>Ads Manager</span>
-                <span class="ml-auto text-xs bg-yellow-600 text-white px-2 py-1 rounded-full">Soon</span>
-              </span>
+              </a>
             </li>
 
             <div class="text-xs uppercase text-gray-500 font-semibold px-3 mb-2 mt-6">Account</div>

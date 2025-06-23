@@ -37,11 +37,13 @@ class AdminProfileController extends Controller
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        // Check current password if provided
-        if ($request->filled('current_password')) {
+        // Check current password if provided and new password is being set
+        if ($request->filled('password') && $request->filled('current_password')) {
             if (!Hash::check($request->current_password, $admin->password)) {
                 return back()->withErrors(['current_password' => 'The current password is incorrect.']);
             }
+        } elseif ($request->filled('password') && !$request->filled('current_password')) {
+            return back()->withErrors(['current_password' => 'Current password is required when setting a new password.']);
         }
 
         // Handle profile picture upload

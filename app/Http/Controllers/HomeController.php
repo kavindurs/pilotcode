@@ -52,4 +52,41 @@ public function pricing()
     return view('home.priceing', compact('plans'));
 }
 
+/**
+     * Get promoted properties for homepage display
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getPromotedProperties()
+    {
+        return \App\Models\Property::whereHas('ads', function ($query) {
+            $query->where('status', 'active')
+                  ->where('start_date', '<=', now())
+                  ->where('end_date', '>=', now());
+        })->with(['ads' => function ($query) {
+            $query->where('status', 'active')
+                  ->where('start_date', '<=', now())
+                  ->where('end_date', '>=', now());
+        }])->get();
+    }
+
+    /**
+     * Display the homepage with promoted properties
+     *
+     * @return \Illuminate\View\View
+     */
+    public function index()
+    {
+        // Get promoted properties (those with active ads)
+        $promotedProperties = $this->getPromotedProperties();
+
+        // Get top rated businesses
+        $topRatedBusinesses = $this->getTopRatedBusinesses();
+
+        // Get latest reviews
+        $latestReviews = $this->getLatestReviews();
+
+        return view('welcome', compact('promotedProperties', 'topRatedBusinesses', 'latestReviews'));
+    }
+
 }

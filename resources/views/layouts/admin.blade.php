@@ -255,7 +255,7 @@
 
             <!-- Ads Manager Tab -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-ads-manager', '')">
-              <a href="#" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
+              <a href="{{ route('admin.ads.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
                   <i class="fas fa-bullhorn text-red-300 group-hover:text-yellow-400 transition-colors"></i>
                 </span>

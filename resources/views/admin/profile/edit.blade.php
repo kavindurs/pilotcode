@@ -23,6 +23,39 @@
         </div>
     </div>
 
+    <!-- Success/Error Messages -->
+    @if(session('success'))
+        <div class="mx-6 mb-6 bg-green-900/50 border border-green-700 text-green-200 px-4 py-3 rounded-lg">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle mr-2"></i>
+                {{ session('success') }}
+            </div>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="mx-6 mb-6 bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded-lg">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                {{ session('error') }}
+            </div>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="mx-6 mb-6 bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded-lg">
+            <div class="flex items-center mb-2">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                <span class="font-medium">Please fix the following errors:</span>
+            </div>
+            <ul class="list-disc list-inside space-y-1">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <!-- Profile Form -->
     <div class="p-6">
         <form action="{{ route('admin.profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
@@ -63,16 +96,12 @@
                             </label>
 
                             @if($admin->profile_picture)
-                                <form action="{{ route('admin.profile.remove-picture') }}" method="POST" class="inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                            class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-                                            onclick="return confirm('Are you sure you want to remove your profile picture?')">
-                                        <i class="fas fa-trash mr-2"></i>
-                                        Remove Picture
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        onclick="removeProfilePicture()"
+                                        class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                                    <i class="fas fa-trash mr-2"></i>
+                                    Remove Picture
+                                </button>
                             @endif
                         </div>
                         @error('profile_picture')
@@ -248,29 +277,43 @@
 
 @push('scripts')
 <script>
-    // Form validation
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('password_confirmation').value;
-        const currentPassword = document.getElementById('current_password').value;
+    // Handle profile picture removal
+    function removeProfilePicture() {
+        if (confirm('Are you sure you want to remove your profile picture?')) {
+            // Create a form to submit the delete request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route("admin.profile.remove-picture") }}';
 
-        // If changing password, validate
-        if (password || confirmPassword) {
-            if (!currentPassword) {
-                e.preventDefault();
-                alert('Please enter your current password to change your password.');
-                return;
-            }
-            if (password !== confirmPassword) {
-                e.preventDefault();
-                alert('New password and confirmation do not match.');
-                return;
-            }
-            if (password.length < 8) {
-                e.preventDefault();
-                alert('New password must be at least 8 characters long.');
-                return;
-            }
+            // Add CSRF token
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = '{{ csrf_token() }}';
+            form.appendChild(csrfToken);
+
+            // Add method override for DELETE
+            const methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = '_method';
+            methodField.value = 'DELETE';
+            form.appendChild(methodField);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    // Temporarily disable all validation to test form submission
+    console.log('Profile edit page loaded - form validation disabled for testing');
+
+    // Just log when button is clicked
+    document.addEventListener('DOMContentLoaded', function() {
+        const submitButton = document.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.addEventListener('click', function(e) {
+                console.log('Submit button clicked - form should submit');
+            });
         }
     });
 

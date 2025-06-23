@@ -38,10 +38,10 @@ use App\Http\Controllers\ReviewInvitationController;
 use Illuminate\Http\Request; // Add this at the top with other imports
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\WalletController;
+use App\Http\Controllers\AdController;
+use App\Http\Controllers\HomeController;
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Property Comparison Route
 Route::get('/compare-properties', function () {
@@ -192,6 +192,21 @@ Route::prefix('property')->group(function () {
     Route::put('/widgets/{widget}', [App\Http\Controllers\WidgetController::class, 'update'])->name('property.widgets.update');
     Route::delete('/widgets/{widget}', [App\Http\Controllers\WidgetController::class, 'destroy'])->name('property.widgets.destroy');
     Route::get('/widgets/upgrade', [App\Http\Controllers\WidgetController::class, 'upgradePlans'])->name('property.widgets.upgrade');
+
+    // Simplified Ads Management routes
+    Route::get('/ads', [\App\Http\Controllers\SimpleAdController::class, 'index'])->name('property.ads.index');
+    Route::get('/ads/create', [\App\Http\Controllers\SimpleAdController::class, 'create'])->name('property.ads.create');
+    Route::post('/ads', [\App\Http\Controllers\SimpleAdController::class, 'store'])->name('property.ads.store');
+    Route::get('/ads/{ad}', [\App\Http\Controllers\SimpleAdController::class, 'show'])->name('property.ads.show');
+    Route::get('/ads/{ad}/edit', [\App\Http\Controllers\SimpleAdController::class, 'edit'])->name('property.ads.edit');
+    Route::put('/ads/{ad}', [\App\Http\Controllers\SimpleAdController::class, 'update'])->name('property.ads.update');
+    Route::delete('/ads/{ad}', [\App\Http\Controllers\SimpleAdController::class, 'destroy'])->name('property.ads.destroy');
+
+    // Payment routes for ads
+    Route::get('/ads/{ad}/payment/manual', [\App\Http\Controllers\SimpleAdController::class, 'paymentManual'])->name('property.ads.payment.manual');
+    Route::get('/ads/{ad}/payment/success', [\App\Http\Controllers\SimpleAdController::class, 'paymentSuccess'])->name('property.ads.payment.success');
+    Route::get('/ads/payment/cancel', [\App\Http\Controllers\SimpleAdController::class, 'paymentCancel'])->name('property.ads.payment.cancel');
+    Route::post('/ads/payment/callback', [\App\Http\Controllers\SimpleAdController::class, 'paymentCallback'])->name('property.ads.payment.callback');
 
     // Add this inside your property prefix group
     Route::get('/reviews', [PropertyController::class, 'reviews'])->name('property.reviews');
@@ -431,6 +446,44 @@ Route::prefix('admin')->group(function () {
          ->name('admin.email_templates.destroy')
          ->middleware('auth:admin');
 
+    // Ad Management Routes for Admin
+    Route::get('ads', [\App\Http\Controllers\Admin\SimpleAdController::class, 'index'])
+         ->name('admin.ads.index')
+         ->middleware('auth:admin');
+
+    Route::get('ads/{ad}', [\App\Http\Controllers\Admin\SimpleAdController::class, 'show'])
+         ->name('admin.ads.show')
+         ->middleware('auth:admin');
+
+    Route::post('ads/{ad}/approve', [\App\Http\Controllers\Admin\SimpleAdController::class, 'approve'])
+         ->name('admin.ads.approve')
+         ->middleware('auth:admin');
+
+    Route::post('ads/{ad}/reject', [\App\Http\Controllers\Admin\SimpleAdController::class, 'reject'])
+         ->name('admin.ads.reject')
+         ->middleware('auth:admin');
+
+    Route::post('ads/{ad}/activate', [\App\Http\Controllers\Admin\SimpleAdController::class, 'activate'])
+         ->name('admin.ads.activate')
+         ->middleware('auth:admin');
+
+    Route::post('ads/{ad}/deactivate', [\App\Http\Controllers\Admin\SimpleAdController::class, 'deactivate'])
+         ->name('admin.ads.deactivate')
+         ->middleware('auth:admin');
+
+    Route::put('ads/settings/cost', [\App\Http\Controllers\Admin\SimpleAdController::class, 'updateAdCost'])
+         ->name('admin.settings.ad-cost.update')
+         ->middleware('auth:admin');
+
+    // Settings Management
+    Route::get('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])
+         ->name('admin.settings.index')
+         ->middleware('auth:admin');
+
+    Route::post('settings/ad-cost', [\App\Http\Controllers\Admin\SettingsController::class, 'updateAdCost'])
+         ->name('admin.settings.update-ad-cost')
+         ->middleware('auth:admin');
+
     // Categories Management
     Route::get('categories', [\App\Http\Controllers\Admin\CategoryController::class, 'index'])
          ->name('admin.categories.index')
@@ -608,6 +661,10 @@ Route::prefix('admin')->group(function () {
          ->name('admin.staff.suspend')
          ->middleware('auth:admin');
 
+    Route::delete('staff/{id}', [\App\Http\Controllers\Admin\StaffController::class, 'destroy'])
+         ->name('admin.staff.destroy')
+         ->middleware('auth:admin');
+
     // Payment Management
     Route::get('payments', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])
          ->name('admin.payments.index')
@@ -678,6 +735,7 @@ Route::prefix('admin')->group(function () {
     Route::delete('profile/remove-picture', [\App\Http\Controllers\Admin\AdminProfileController::class, 'removeProfilePicture'])
          ->name('admin.profile.remove-picture')
          ->middleware('auth:admin');
+
 });
 
 // Public routes for email tracking and reviews
