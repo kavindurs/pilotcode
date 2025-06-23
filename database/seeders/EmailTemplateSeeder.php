@@ -94,6 +94,57 @@ class EmailTemplateSeeder extends Seeder
 <p>If you have any questions about the rejection or need help with your submission, please contact our support team.</p>
 <p>We appreciate your understanding and look forward to approving your property soon!</p>
 <p>Best regards,<br>The {{site_name}} Team</p>'
+            ],
+            [
+                'slug' => 'property_status_update',
+                'subject' => 'Property Status Update - {{business_name}}',
+                'body' => '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4;">
+    <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2c3e50; margin: 0;">Property Status Update</h1>
+        </div>
+        <div style="margin-bottom: 30px;">
+            <p>Dear {{first_name}} {{last_name}},</p>
+            <p>We are writing to inform you about an update regarding your property <strong>"{{business_name}}"</strong>.</p>
+            <p><strong>Status:</strong> {{action}}</p>
+            <p>If you have any questions or need assistance, please don\'t hesitate to contact our support team.</p>
+        </div>
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1; color: #7f8c8d;">
+            <p>Thank you for your business!</p>
+            <p><em>This is an automated email. Please do not reply to this message.</em></p>
+        </div>
+    </div>
+</div>'
+            ],
+            [
+                'slug' => 'property_claimed',
+                'subject' => 'Property Claimed - New Login Details for {{business_name}}',
+                'body' => '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4;">
+    <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #3498db; margin: 0;">🔑 Property Claimed Successfully!</h1>
+        </div>
+        <div style="margin-bottom: 30px;">
+            <p>Dear {{first_name}} {{last_name}},</p>
+            <p>Congratulations! Your property <strong>"{{business_name}}"</strong> has been <span style="color: #27ae60; font-weight: bold;">successfully claimed</span>.</p>
+            <p>Your account has been set up and you now have full access to manage your business profile.</p>
+            <div style="background-color: #ecf0f1; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #3498db;">
+                <h3 style="margin-top: 0; color: #2c3e50;">🔐 Your New Login Credentials</h3>
+                <p>You can now log in to your account using the following credentials:</p>
+                <div style="font-family: \'Courier New\', monospace; background-color: #fff; padding: 10px; border-radius: 3px; margin: 10px 0;">
+                    <strong>Email:</strong> {{new_login_email}}<br>
+                    <strong>Password:</strong> {{new_password}}
+                </div>
+                <p><em>For security reasons, we recommend changing your password after your first login.</em></p>
+            </div>
+            <p>If you have any questions or need assistance, please don\'t hesitate to contact our support team.</p>
+        </div>
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1; color: #7f8c8d;">
+            <p>Thank you for your business!</p>
+            <p><em>This is an automated email. Please do not reply to this message.</em></p>
+        </div>
+    </div>
+</div>'
             ]
         ];
 

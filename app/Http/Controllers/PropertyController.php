@@ -920,7 +920,7 @@ class PropertyController extends Controller
             $property->first_name = $user->first_name ?? explode(' ', $user->name)[0] ?? 'User';
             $property->last_name = $user->last_name ?? (count(explode(' ', $user->name)) > 1 ? explode(' ', $user->name)[1] : 'Account');
             $property->password = bcrypt(Str::random(12));
-            $property->status = 'Not Approved';
+            $property->status = 'Not Approved & Not Claimed';
 
             $property->save();
 

@@ -681,6 +681,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Add event listener for category selection change
+    const categorySelect = document.getElementById('existing_category');
+    if (categorySelect) {
+        categorySelect.addEventListener('change', function() {
+            console.log('Category changed to:', this.value);
+            if (this.value) {
+                loadSubcategories();
+            } else {
+                // Clear subcategories if no category selected
+                const subcategorySelect = document.getElementById('existing_subcategory');
+                if (subcategorySelect) {
+                    subcategorySelect.innerHTML = '<option value="">Select a category first</option>';
+                }
+            }
+        });
+    }
+
     // Test function
     window.testFormSubmission = function() {
         const form = document.getElementById('addPropertyForm');

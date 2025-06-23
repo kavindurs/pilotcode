@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin Dashboard')</title>
     @vite('resources/css/app.css')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
@@ -144,6 +145,26 @@
               </a>
             </li>
 
+            <!-- Claim Business Tab -->
+            <li class="menu-item rounded-md overflow-hidden @yield('active-claim-business', '')">
+              <a href="{{ route('admin.properties.claim-index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
+                <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
+                  <i class="fas fa-hand-holding-heart text-red-300 group-hover:text-yellow-400 transition-colors"></i>
+                </span>
+                <span>Claim Business</span>
+              </a>
+            </li>
+
+            <!-- Claim Invitations Tab -->
+            <li class="menu-item rounded-md overflow-hidden @yield('active-claim-invitations', '')">
+              <a href="{{ route('admin.business-claims.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
+                <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
+                  <i class="fas fa-inbox text-red-300 group-hover:text-yellow-400 transition-colors"></i>
+                </span>
+                <span>Claim Invitations</span>
+              </a>
+            </li>
+
             <div class="text-xs uppercase text-gray-500 font-semibold px-3 mb-2 mt-6">Content Management</div>
 
             <!-- Reviews Tab -->
@@ -230,15 +251,7 @@
 
             <div class="text-xs uppercase text-gray-500 font-semibold px-3 mb-2 mt-6">System</div>
 
-            <!-- Claim Business Tab -->
-            <li class="menu-item rounded-md overflow-hidden @yield('active-claim-business', '')">
-              <a href="#" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
-                <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
-                  <i class="fas fa-hand-holding-heart text-red-300 group-hover:text-yellow-400 transition-colors"></i>
-                </span>
-                <span>Claim Business</span>
-              </a>
-            </li>
+
 
             <!-- Ads Manager Tab -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-ads-manager', '')">

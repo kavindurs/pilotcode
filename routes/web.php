@@ -26,6 +26,8 @@ use App\Http\Controllers\PropertyController;  // Add this line
 use App\Http\Controllers\RateController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\Admin\BusinessClaimController;
+use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\PropertyAuthController;
 use App\Http\Controllers\PropertyPasswordResetController;
 use App\Http\Controllers\PlanController;
@@ -329,33 +331,75 @@ Route::prefix('admin')->group(function () {
          ->name('admin.properties.reject')
          ->middleware('auth:admin');
 
-    // Reviews management routes
-    Route::get('reviews', [\App\Http\Controllers\Admin\ReviewController::class, 'index'])
+    // Claim Business management routes
+    Route::get('claim-business', [\App\Http\Controllers\Admin\PropertyController::class, 'claimIndex'])
+         ->name('admin.properties.claim-index')
+         ->middleware('auth:admin');
+
+    Route::post('claim-business/{id}/approve', [\App\Http\Controllers\Admin\PropertyController::class, 'approveForClaim'])
+         ->name('admin.properties.claim-approve')
+         ->middleware('auth:admin');
+
+    Route::post('claim-business/{id}/reject', [\App\Http\Controllers\Admin\PropertyController::class, 'rejectForClaim'])
+         ->name('admin.properties.claim-reject')
+         ->middleware('auth:admin');
+
+    Route::post('claim-business/{id}/claim', [\App\Http\Controllers\Admin\PropertyController::class, 'claimProperty'])
+         ->name('admin.properties.claim')
+         ->middleware('auth:admin');
+
+    Route::get('claim-business/{property}/edit', [\App\Http\Controllers\Admin\PropertyController::class, 'claimEdit'])
+         ->name('admin.properties.claim-edit')
+         ->middleware('auth:admin');
+
+    Route::put('claim-business/{property}', [\App\Http\Controllers\Admin\PropertyController::class, 'claimUpdate'])
+         ->name('admin.properties.claim-update')
+         ->middleware('auth:admin');
+
+    Route::delete('claim-business/{property}', [\App\Http\Controllers\Admin\PropertyController::class, 'claimDestroy'])
+         ->name('admin.properties.claim-destroy')
+         ->middleware('auth:admin');
+
+    // Business Claims Management Routes
+    Route::get('business-claims', [\App\Http\Controllers\Admin\BusinessClaimController::class, 'index'])
+         ->name('admin.business-claims.index')
+         ->middleware('auth:admin');
+
+    Route::get('business-claims/{businessClaim}', [\App\Http\Controllers\Admin\BusinessClaimController::class, 'show'])
+         ->name('admin.business-claims.show')
+         ->middleware('auth:admin');
+
+    Route::post('business-claims/{businessClaim}/approve', [\App\Http\Controllers\Admin\BusinessClaimController::class, 'approve'])
+         ->name('admin.business-claims.approve')
+         ->middleware('auth:admin');
+
+    Route::post('business-claims/{businessClaim}/reject', [\App\Http\Controllers\Admin\BusinessClaimController::class, 'reject'])
+         ->name('admin.business-claims.reject')
+         ->middleware('auth:admin');
+
+    Route::post('business-claims/{businessClaim}/claim', [\App\Http\Controllers\Admin\BusinessClaimController::class, 'claim'])
+         ->name('admin.business-claims.claim')
+         ->middleware('auth:admin');
+
+    Route::delete('business-claims/{businessClaim}', [\App\Http\Controllers\Admin\BusinessClaimController::class, 'destroy'])
+         ->name('admin.business-claims.destroy')
+         ->middleware('auth:admin');
+
+    // Reviews Management Routes
+    Route::get('reviews', [ReviewController::class, 'index'])
          ->name('admin.reviews.index')
          ->middleware('auth:admin');
 
-    Route::get('reviews/{id}', [\App\Http\Controllers\Admin\ReviewController::class, 'show'])
-         ->name('admin.reviews.show')
-         ->middleware('auth:admin');
-
-    Route::get('reviews/{id}/edit', [\App\Http\Controllers\Admin\ReviewController::class, 'edit'])
-         ->name('admin.reviews.edit')
-         ->middleware('auth:admin');
-
-    Route::put('reviews/{id}', [\App\Http\Controllers\Admin\ReviewController::class, 'update'])
-         ->name('admin.reviews.update')
-         ->middleware('auth:admin');
-
-    Route::delete('reviews/{id}', [\App\Http\Controllers\Admin\ReviewController::class, 'destroy'])
-         ->name('admin.reviews.destroy')
-         ->middleware('auth:admin');
-
-    Route::post('reviews/{id}/approve', [\App\Http\Controllers\Admin\ReviewController::class, 'approve'])
+    Route::post('reviews/{id}/approve', [ReviewController::class, 'approve'])
          ->name('admin.reviews.approve')
          ->middleware('auth:admin');
 
-    Route::post('reviews/{id}/reject', [\App\Http\Controllers\Admin\ReviewController::class, 'reject'])
+    Route::post('reviews/{id}/reject', [ReviewController::class, 'reject'])
          ->name('admin.reviews.reject')
+         ->middleware('auth:admin');
+
+    Route::delete('reviews/{id}', [ReviewController::class, 'destroy'])
+         ->name('admin.reviews.destroy')
          ->middleware('auth:admin');
 
     // Email Templates Management
@@ -809,30 +853,33 @@ Route::post('/mock-payment/{transaction_id}/complete', function($transactionId) 
     return redirect()->route('payment.success');
 })->name('mock.payment.complete');
 
-// Test route for payment gateway
-Route::get('/test-payment', function () {
-    $plans = \App\Models\Plan::whereIn('id', [2, 3])->get();
-    return view('test-payment', compact('plans'));
-})->name('test.payment');
+Route::get('/test-subcategories/{categoryId}', function($categoryId) {
+    try {
+        // Try using the Subcategory model first
+        $subcategories = \App\Models\Subcategory::where('category_id', $categoryId)
+                                                ->where('is_active', 1)
+                                                ->orderBy('name')
+                                                ->get(['id', 'name', 'category_id']);
 
-Route::post('/mock-payment/{transaction_id}/complete', function($transactionId) {
-    // Find and update the payment
-    $payment = \App\Models\Payment::where('genie_transaction_id', $transactionId)->first();
+        if ($subcategories->count() > 0) {
+            return response()->json($subcategories);
+        }
 
-    if ($payment) {
-        $payment->update([
-            'status' => 'success',
-            'completed_at' => now()
-        ]);
+        // Fallback to raw query if model doesn't work
+        $subcategories = DB::select("SELECT id, name, category_id FROM subcategories WHERE category_id = ? AND is_active = 1 ORDER BY name", [$categoryId]);
 
-        Log::info('Mock payment completed', [
-            'payment_id' => $payment->id,
-            'transaction_id' => $transactionId
-        ]);
+        if (count($subcategories) > 0) {
+            return response()->json($subcategories);
+        }
+
+        // Return empty array if no subcategories found
+        return response()->json([]);
+
+    } catch (\Exception $e) {
+        \Log::error('Error loading subcategories: ' . $e->getMessage());
+        return response()->json([]);
     }
-
-    return redirect()->route('payment.success');
-})->name('mock.payment.complete');
+});
 
 Route::get('/test-subcategories-direct/{categoryId}', function($categoryId) {
     try {
@@ -849,5 +896,14 @@ Route::get('/test-subcategories-direct/{categoryId}', function($categoryId) {
         return response()->json($testData);
     }
 });
+
+// Business Claim Routes
+Route::get('/claim-business/{property}', [App\Http\Controllers\BusinessClaimController::class, 'create'])->name('business-claim.create');
+Route::post('/claim-business', [App\Http\Controllers\BusinessClaimController::class, 'store'])->name('business-claim.store');
+Route::get('/claim-business-success', [App\Http\Controllers\BusinessClaimController::class, 'success'])->name('business-claim.success');
+Route::get('/api/business-claim/subcategories/{categoryId}', [App\Http\Controllers\BusinessClaimController::class, 'getSubcategories']);
+
+// Public business search for claiming
+Route::get('/business-search', [App\Http\Controllers\BusinessClaimController::class, 'search'])->name('business-claim.search');
 
 

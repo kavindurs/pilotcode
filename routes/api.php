@@ -24,6 +24,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Search API endpoint - don't use any middleware that would block the request
 Route::get('/search', [SearchController::class, 'search']);
 
+// Claim Business Search API endpoint - only returns claimable properties
+Route::get('/claim-search', [SearchController::class, 'claimSearch']);
+
 // Property comparison API routes
 Route::prefix('property-comparison')->group(function () {
     Route::get('/properties', [PropertyComparisonController::class, 'getProperties']);

@@ -24,17 +24,52 @@
                 <!-- Profile Header with Stats -->
                 <div class="bg-white rounded-xl overflow-hidden shadow-sm mb-6">
                     <div class="relative bg-gradient-to-br from-blue-500 to-indigo-600">
-                        <!-- Background Pattern -->
-                        <div class="absolute inset-0 opacity-10">
+                        <!-- Enhanced Textured Background Pattern -->
+                        <div class="absolute inset-0 opacity-15">
                             <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
                                 <defs>
-                                    <pattern id="pattern" width="40" height="40" patternUnits="userSpaceOnUse">
-                                        <path d="M0 20 L40 20" stroke="#fff" stroke-width="1" fill="none" />
-                                        <path d="M20 0 L20 40" stroke="#fff" stroke-width="1" fill="none" />
+                                    <!-- Main Grid Pattern -->
+                                    <pattern id="mainGrid" width="60" height="60" patternUnits="userSpaceOnUse">
+                                        <path d="M0 30 L60 30" stroke="#fff" stroke-width="0.5" fill="none" opacity="0.6" />
+                                        <path d="M30 0 L30 60" stroke="#fff" stroke-width="0.5" fill="none" opacity="0.6" />
+                                    </pattern>
+                                    
+                                    <!-- Dotted Texture Pattern -->
+                                    <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
+                                        <circle cx="10" cy="10" r="1" fill="#fff" opacity="0.3" />
+                                        <circle cx="5" cy="5" r="0.5" fill="#fff" opacity="0.2" />
+                                        <circle cx="15" cy="5" r="0.5" fill="#fff" opacity="0.2" />
+                                        <circle cx="5" cy="15" r="0.5" fill="#fff" opacity="0.2" />
+                                        <circle cx="15" cy="15" r="0.5" fill="#fff" opacity="0.2" />
+                                    </pattern>
+                                    
+                                    <!-- Diagonal Lines Texture -->
+                                    <pattern id="diagonals" width="30" height="30" patternUnits="userSpaceOnUse">
+                                        <path d="M0 0 L30 30" stroke="#fff" stroke-width="0.3" fill="none" opacity="0.4" />
+                                        <path d="M0 30 L30 0" stroke="#fff" stroke-width="0.3" fill="none" opacity="0.3" />
+                                    </pattern>
+                                    
+                                    <!-- Combined Pattern -->
+                                    <pattern id="texturedPattern" width="60" height="60" patternUnits="userSpaceOnUse">
+                                        <rect width="60" height="60" fill="url(#mainGrid)" />
+                                        <rect width="60" height="60" fill="url(#dots)" />
+                                        <rect width="60" height="60" fill="url(#diagonals)" />
                                     </pattern>
                                 </defs>
-                                <rect width="100%" height="100%" fill="url(#pattern)" />
+                                <rect width="100%" height="100%" fill="url(#texturedPattern)" />
                             </svg>
+                        </div>
+                        
+                        <!-- Additional Texture Overlay -->
+                        <div class="absolute inset-0 opacity-5">
+                            <div class="w-full h-full" style="background-image: 
+                                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.2) 2px, transparent 2px),
+                                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                                linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%),
+                                linear-gradient(-45deg, rgba(255,255,255,0.05) 25%, transparent 25%);
+                                background-size: 40px 40px, 60px 60px, 20px 20px, 20px 20px;
+                                background-position: 0 0, 30px 30px, 0 0, 10px 10px;">
+                            </div>
                         </div>
 
                         <div class="relative px-8 py-16 sm:px-10 sm:py-14 flex flex-col sm:flex-row items-center">

@@ -12,7 +12,7 @@
 
     <div>
         <div>
-            @include('home.user_hero')
+            @include('home.business_hero')
             @php
             $topRatedBusinesses = App\Models\Property::select(
                     'properties.id',
