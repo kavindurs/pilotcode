@@ -1,6 +1,14 @@
 <section class="w-full relative py-8 sm:py-12 lg:py-16 xl:py-24 bg-blue-800 overflow-hidden">
     <!-- Background circle patterns -->
-    <div class="absolute top-0 right-0 w-96 h-96 bg-blue-500 rounded-full opacity-30 transform translate-x-1/3 -translate-y-1/4"></div>
+    <div class="absolute top-0 righ                // Add business results (filtered for approved and not claimed properties)
+                if (data.properties.length > 0) {
+                    // Additional client-side filtering to ensure compliance
+                    const filteredProperties = data.properties.filter(property => {
+                        return property.status === 'Approved' ||
+                               property.status === 'Not Claimed' ||
+                               property.status === 'Not Approved & Not Claimed' ||
+                               property.status === 'Not Claimed & Rejected';
+                    }); h-96 bg-blue-500 rounded-full opacity-30 transform translate-x-1/3 -translate-y-1/4"></div>
     <div class="absolute bottom-0 left-0 w-64 h-64 bg-blue-500 rounded-full opacity-20 transform -translate-x-1/3 translate-y-1/4"></div>
 
     <!-- Content container with max width -->
@@ -153,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
         noResults.classList.add('hidden');
         resultsContainer.innerHTML = '';
 
-        // Fetch search results via AJAX
+        // Fetch search results via AJAX with filtering for approved and not claimed properties
         fetch(`/api/search?query=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(data => {
@@ -167,14 +175,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Clear previous results
                 resultsContainer.innerHTML = '';
 
-                // Add business results
+                // Add business results (filtered for approved and not claimed properties)
                 if (data.properties.length > 0) {
-                    const businessesHeading = document.createElement('h3');
-                    businessesHeading.className = 'px-4 pt-3 text-xs font-semibold text-gray-500 uppercase tracking-wider';
-                    businessesHeading.textContent = 'Businesses';
-                    resultsContainer.appendChild(businessesHeading);
+                    // Additional client-side filtering to ensure compliance
+                    const filteredProperties = data.properties.filter(property => {
+                        return property.status === 'Approved' ||
+                               property.status === 'Not Claimed';
+                    });
 
-                    data.properties.slice(0, 5).forEach(property => {
+                    if (filteredProperties.length > 0) {
+                        const businessesHeading = document.createElement('h3');
+                        businessesHeading.className = 'px-4 pt-3 text-xs font-semibold text-gray-500 uppercase tracking-wider';
+                        businessesHeading.textContent = 'Businesses';
+                        resultsContainer.appendChild(businessesHeading);
+
+                        filteredProperties.slice(0, 5).forEach(property => {
                         const item = document.createElement('a');
                         item.href = `/property/${property.id}`;
                         item.className = 'block px-4 py-3 hover:bg-gray-50 transition-colors border-t border-gray-100 flex items-center';
@@ -218,28 +233,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         item.appendChild(details);
                         resultsContainer.appendChild(item);
-                    });
-
-                    // Show "View all businesses" if there are more than 5
-                    if (data.properties.length > 5) {
-                        const viewAll = document.createElement('a');
-                        viewAll.href = `/search?query=${encodeURIComponent(query)}`;
-                        viewAll.className = 'block px-4 py-3 text-center text-sm text-blue-600 hover:text-blue-800 font-medium border-t border-gray-100 bg-gray-50';
-                        viewAll.textContent = `View all ${data.properties.length} businesses`;
-                        resultsContainer.appendChild(viewAll);
+                    });                        // Show "View all businesses" if there are more than 5 filtered results
+                        if (filteredProperties.length > 5) {
+                            const viewAll = document.createElement('a');
+                            viewAll.href = `/search?query=${encodeURIComponent(query)}`;
+                            viewAll.className = 'block px-4 py-3 text-center text-sm text-blue-600 hover:text-blue-800 font-medium border-t border-gray-100 bg-gray-50';
+                            viewAll.textContent = `View all ${filteredProperties.length} businesses`;
+                            resultsContainer.appendChild(viewAll);
+                        }
                     }
                 }
 
-                // Add category results
+                // Add category results (already filtered for active categories on server-side)
                 if (data.subcategories.length > 0) {
-                    const categoriesHeading = document.createElement('h3');
-                    categoriesHeading.className = 'px-4 pt-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-t border-gray-200 mt-2';
-                    categoriesHeading.textContent = 'Categories';
-                    resultsContainer.appendChild(categoriesHeading);
+                    // Server-side filtering already applied, no need for additional client-side filtering
+                    const filteredSubcategories = data.subcategories;
 
-                    data.subcategories.slice(0, 4).forEach(category => {
+                    if (filteredSubcategories.length > 0) {
+                        const categoriesHeading = document.createElement('h3');
+                        categoriesHeading.className = 'px-4 pt-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-t border-gray-200 mt-2';
+                        categoriesHeading.textContent = 'Categories';
+                        resultsContainer.appendChild(categoriesHeading);
+
+                        filteredSubcategories.slice(0, 4).forEach(category => {
                         const item = document.createElement('a');
-                        item.href = `/category/${category.slug}`;
+                        item.href = `/properties/subcategory/${category.id}`;
                         item.className = 'block px-4 py-3 hover:bg-gray-50 transition-colors border-t border-gray-100';
 
                         const name = document.createElement('p');
@@ -257,6 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         resultsContainer.appendChild(item);
                     });
+                    }
                 }
             })
             .catch(error => {

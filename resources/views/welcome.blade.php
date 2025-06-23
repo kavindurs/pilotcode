@@ -36,6 +36,13 @@
         <div class="content-wrapper">
             @include('home.user_hero')
 
+            <!-- Promoted Properties Slideshow -->
+            <x-property-slideshow
+                :properties="$promotedProperties"
+                title="Featured Properties"
+                subtitle="Top-rated properties currently being promoted"
+            />
+
             <!-- Property Comparison Tool -->
             <div class="py-12">
                 @include('components.property-comparison-simple')

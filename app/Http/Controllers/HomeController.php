@@ -50,24 +50,61 @@ public function pricing()
 
     // Pass the plans to the view - note the 'priceing' spelling to match your file name
     return view('home.priceing', compact('plans'));
-}
-
-/**
+}    /**
      * Get promoted properties for homepage display
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getPromotedProperties()
     {
-        return \App\Models\Property::whereHas('ads', function ($query) {
+        return \App\Models\Property::select([
+            'properties.id',
+            'properties.business_name',
+            'properties.city',
+            'properties.country',
+            'properties.zip_code',
+            'properties.business_email',
+            'properties.domain',
+            'properties.property_type',
+            'properties.category',
+            'properties.subcategory',
+            'properties.profile_picture',
+            'properties.created_at',
+            'properties.updated_at',
+            DB::raw('AVG(rates.rate) as average_rating'),
+            DB::raw('COUNT(rates.id) as review_count')
+        ])
+        ->leftJoin('rates', function($join) {
+            $join->on('properties.id', '=', 'rates.property_id')
+                 ->where('rates.status', '=', 'Approved');
+        })
+        ->whereHas('ads', function ($query) {
             $query->where('status', 'active')
                   ->where('start_date', '<=', now())
                   ->where('end_date', '>=', now());
-        })->with(['ads' => function ($query) {
+        })
+        ->with(['ads' => function ($query) {
             $query->where('status', 'active')
                   ->where('start_date', '<=', now())
                   ->where('end_date', '>=', now());
-        }])->get();
+        }])
+        ->groupBy([
+            'properties.id',
+            'properties.business_name',
+            'properties.city',
+            'properties.country',
+            'properties.zip_code',
+            'properties.business_email',
+            'properties.domain',
+            'properties.property_type',
+            'properties.category',
+            'properties.subcategory',
+            'properties.profile_picture',
+            'properties.created_at',
+            'properties.updated_at'
+        ])
+        ->orderBy('properties.created_at', 'desc')
+        ->get();
     }
 
     /**
@@ -80,13 +117,7 @@ public function pricing()
         // Get promoted properties (those with active ads)
         $promotedProperties = $this->getPromotedProperties();
 
-        // Get top rated businesses
-        $topRatedBusinesses = $this->getTopRatedBusinesses();
-
-        // Get latest reviews
-        $latestReviews = $this->getLatestReviews();
-
-        return view('welcome', compact('promotedProperties', 'topRatedBusinesses', 'latestReviews'));
+        return view('welcome', compact('promotedProperties'));
     }
 
 }

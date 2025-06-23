@@ -24,6 +24,17 @@
                     <i class="fas fa-edit"></i>
                     <span>Write a Review</span>
                 </a>
+
+                <a href="{{ route('properties.add') }}" class="flex items-center space-x-2 text-base font-medium text-black hover:text-blue-600">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Add Business</span>
+                </a>
+
+                <a href="{{ route('scam.report') }}" class="flex items-center space-x-2 text-base font-medium text-black hover:text-orange-600">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Scam Report</span>
+                </a>
+
                 <!-- Categories Dropdown -->
                 <div class="relative group">
                     <a href="{{ route('categories.index') }}" class="flex items-center space-x-2 text-base font-medium text-black transition-all duration-200 hover:text-blue-600">
@@ -224,6 +235,14 @@
                         </div>
 
                         <a href="{{ route('review') }}" class="py-2 text-base font-medium text-black hover:text-blue-600">Write a Review</a>
+
+                        <a href="{{ route('properties.add') }}" class="py-2 text-base font-medium text-black hover:text-blue-600">
+                            <i class="fas fa-plus-circle mr-2"></i> Add Business
+                        </a>
+
+                        <a href="{{ route('scam.report') }}" class="py-2 text-base font-medium text-black hover:text-orange-600">
+                            <i class="fas fa-exclamation-triangle mr-2"></i> Scam Report
+                        </a>
 
                         <!-- Mobile Profile Menu Items -->
                         <a href="{{ route('profile.show') }}" class="py-2 text-base font-medium text-gray-700 hover:text-blue-600">

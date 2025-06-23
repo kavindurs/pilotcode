@@ -887,6 +887,11 @@ Route::get('/add-business', function () {
     return view('properties.add');
 })->name('properties.add');
 
+// Scam report route - uses the same functionality as add-business
+Route::get('/scam-report', function () {
+    return view('properties.add', ['isScamReport' => true]);
+})->name('scam.report');
+
 // Add this to your web.php
 Route::get('/mock-payment/{transaction_id}', function($transactionId) {
     return view('payments.mock-payment', ['transactionId' => $transactionId]);

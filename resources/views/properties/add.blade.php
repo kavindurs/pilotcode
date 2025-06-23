@@ -35,9 +35,19 @@
 
                         <!-- Right: Page Title and Description -->
                         <div class="text-white">
-                            <h1 class="text-3xl font-bold mb-2">Add a Business</h1>
+                            <h1 class="text-3xl font-bold mb-2">
+                                @if(isset($isScamReport) && $isScamReport)
+                                    Report a Scam Business
+                                @else
+                                    Add a Business
+                                @endif
+                            </h1>
                             <p class="text-blue-100 max-w-2xl">
-                                Help the community discover great businesses by adding them to our platform. Business owners can claim their listing later.
+                                @if(isset($isScamReport) && $isScamReport)
+                                    Help protect the community by reporting scam businesses. Your report helps others avoid potential scams.
+                                @else
+                                    Help the community discover great businesses by adding them to our platform. Business owners can claim their listing later.
+                                @endif
                             </p>
                         </div>
                     </div>
@@ -48,9 +58,19 @@
         <!-- Main content -->
         <div class="bg-white rounded-lg shadow-sm p-6 sm:p-8 mb-8">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">Add a Business</h2>
+                <h2 class="text-2xl font-bold text-gray-900">
+                    @if(isset($isScamReport) && $isScamReport)
+                        Report a Scam Business
+                    @else
+                        Add a Business
+                    @endif
+                </h2>
                 <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                    Business owners can claim their listing later
+                    @if(isset($isScamReport) && $isScamReport)
+                        Help protect the community from scams
+                    @else
+                        Business owners can claim their listing later
+                    @endif
                 </span>
             </div>
 
@@ -188,7 +208,7 @@
                             </div>
 
                             <div class="col-span-2">
-                                <label for="business_email" class="block text-sm font-medium text-gray-700">Business Email <span class="text-red-500">*</span></label>
+                                <label for="business_email" class="block text-sm font-medium text-gray-700">Personal Email <span class="text-red-500">*</span></label>
                                 <input type="email" id="business_email" name="business_email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
                                 <div class="text-red-500 text-xs mt-1 hidden"></div>
                             </div>
@@ -248,36 +268,47 @@
                         <div class="mb-6">
                             <label for="category-select" class="block text-sm font-medium text-gray-700 mb-1">Category <span class="text-red-500">*</span></label>
 
-                            <div class="flex space-x-4 mb-4">
-                                <div class="flex items-center">
-                                    <input type="radio" id="existing-category" name="category_type" value="existing" class="mr-2" checked>
-                                    <label for="existing-category">Select existing category</label>
+                            @if(isset($isScamReport) && $isScamReport)
+                                <!-- Scam Report: Pre-selected category (readonly) -->
+                                <div class="bg-gray-50 border border-gray-200 rounded-md p-3 mb-4">
+                                    <p class="text-sm text-gray-600 mb-2">For scam reports, the category is automatically set to:</p>
+                                    <p class="font-medium text-gray-900">Scam Reports</p>
+                                    <input type="hidden" name="existing_category" value="23">
+                                    <input type="hidden" name="category_type" value="existing">
+                                </div>
+                            @else
+                                <!-- Regular business addition: normal category selection -->
+                                <div class="flex space-x-4 mb-4">
+                                    <div class="flex items-center">
+                                        <input type="radio" id="existing-category" name="category_type" value="existing" class="mr-2" checked>
+                                        <label for="existing-category">Select existing category</label>
+                                    </div>
+
+                                    <div class="flex items-center">
+                                        <input type="radio" id="new-category" name="category_type" value="new" class="mr-2">
+                                        <label for="new-category">Add new category</label>
+                                    </div>
                                 </div>
 
-                                <div class="flex items-center">
-                                    <input type="radio" id="new-category" name="category_type" value="new" class="mr-2">
-                                    <label for="new-category">Add new category</label>
+                                <div id="existing-category-container">
+                                    <label for="existing_category" class="block text-sm font-medium text-gray-700 mb-1">Select Category <span class="text-red-500">*</span></label>
+                                    <select id="existing_category" name="existing_category" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Select from existing categories</option>
+                                        @php
+                                            $categories = \App\Models\Category::where('is_active', 1)->orderBy('name')->get();
+                                        @endphp
+
+                                        @foreach($categories as $category)
+                                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
-                            </div>
 
-                            <div id="existing-category-container">
-                                <label for="existing_category" class="block text-sm font-medium text-gray-700 mb-1">Select Category <span class="text-red-500">*</span></label>
-                                <select id="existing_category" name="existing_category" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="">Select from existing categories</option>
-                                    @php
-                                        $categories = \App\Models\Category::where('is_active', 1)->orderBy('name')->get();
-                                    @endphp
-
-                                    @foreach($categories as $category)
-                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div id="new-category-container" class="hidden">
-                                <label for="new_category" class="block text-sm font-medium text-gray-700 mb-1">New Category <span class="text-red-500">*</span></label>
-                                <input type="text" id="new_category" name="new_category" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Enter new category name">
-                            </div>
+                                <div id="new-category-container" class="hidden">
+                                    <label for="new_category" class="block text-sm font-medium text-gray-700 mb-1">New Category <span class="text-red-500">*</span></label>
+                                    <input type="text" id="new_category" name="new_category" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Enter new category name">
+                                </div>
+                            @endif
                         </div>
 
                         <div class="flex justify-between mt-6">
@@ -291,39 +322,55 @@
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Select Subcategory</h3>
 
                         <div id="subcategory-content" class="mb-6">
-                            <!-- Dynamic content for subcategory selection -->
-                            <div class="mb-6">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Subcategory <span class="text-red-500">*</span>
-                                </label>
+                            @if(isset($isScamReport) && $isScamReport)
+                                <!-- Scam Report: Pre-selected subcategory (readonly) -->
+                                <div class="bg-gray-50 border border-gray-200 rounded-md p-3 mb-4">
+                                    <p class="text-sm text-gray-600 mb-2">For scam reports, the subcategory is automatically set to:</p>
+                                    <p class="font-medium text-gray-900">Scam Reports</p>
+                                    <input type="hidden" name="existing_subcategory" value="500">
+                                    <input type="hidden" name="subcategory_option" value="existing">
+                                </div>
+                            @else
+                                <!-- Regular business addition: normal subcategory selection -->
+                                <div class="mb-6">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Subcategory <span class="text-red-500">*</span>
+                                    </label>
 
-                                <div class="flex space-x-4 mb-4">
-                                    <div class="flex items-center">
-                                        <input type="radio" id="existing_subcategory_option" name="subcategory_option" value="existing" class="mr-2" checked>
-                                        <label for="existing_subcategory_option">Select existing subcategory</label>
+                                    <div class="flex space-x-4 mb-4">
+                                        <div class="flex items-center">
+                                            <input type="radio" id="existing_subcategory_option" name="subcategory_option" value="existing" class="mr-2" checked>
+                                            <label for="existing_subcategory_option">Select existing subcategory</label>
+                                        </div>
+
+                                        <div class="flex items-center">
+                                            <input type="radio" id="new_subcategory_option" name="subcategory_option" value="new" class="mr-2">
+                                            <label for="new_subcategory_option">Add new subcategory</label>
+                                        </div>
                                     </div>
 
-                                    <div class="flex items-center">
-                                        <input type="radio" id="new_subcategory_option" name="subcategory_option" value="new" class="mr-2">
-                                        <label for="new_subcategory_option">Add new subcategory</label>
+                                    <div id="existing_subcategory_container" class="mb-4">
+                                        <select id="existing_subcategory" name="existing_subcategory" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                            <option value="">Select a subcategory</option>
+                                        </select>
+                                    </div>
+
+                                    <div id="new_subcategory_container" class="mb-4 hidden">
+                                        <input type="text" id="new_subcategory" name="new_subcategory" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Enter new subcategory name...">
                                     </div>
                                 </div>
-
-                                <div id="existing_subcategory_container" class="mb-4">
-                                    <select id="existing_subcategory" name="existing_subcategory" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="">Select a subcategory</option>
-                                    </select>
-                                </div>
-
-                                <div id="new_subcategory_container" class="mb-4 hidden">
-                                    <input type="text" id="new_subcategory" name="new_subcategory" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Enter new subcategory name...">
-                                </div>
-                            </div>
+                            @endif
                         </div>
 
                         <div class="flex justify-between mt-6">
                             <button type="button" id="step4Prev" class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">Back</button>
-                            <button type="submit" id="submitBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Business</button>
+                            <button type="submit" id="submitBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                @if(isset($isScamReport) && $isScamReport)
+                                    Report Scam Business
+                                @else
+                                    Add Business
+                                @endif
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -337,7 +384,11 @@
                             </div>
                             <div class="ml-3">
                                 <p class="text-sm text-green-700">
-                                    Business successfully added! Thank you for contributing to the Scoreness community.
+                                    @if(isset($isScamReport) && $isScamReport)
+                                        Scam report successfully submitted! Thank you for helping protect the community.
+                                    @else
+                                        Business successfully added! Thank you for contributing to the Scoreness community.
+                                    @endif
                                 </p>
                             </div>
                         </div>
@@ -384,6 +435,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const step4Indicator = document.getElementById('step4Indicator');
 
     const progressBar = document.getElementById('progressBar');
+
+    // Check if this is a scam report (passed from backend)
+    const isScamReport = @json(isset($isScamReport) && $isScamReport);
 
     // Property type handling
     document.querySelectorAll('.property-type-option').forEach(option => {
@@ -458,8 +512,10 @@ document.addEventListener('DOMContentLoaded', function() {
         step4.classList.remove('hidden');
         updateStepIndicators(4);
 
-        // Load subcategories
-        setTimeout(loadSubcategories, 200);
+        // Only load subcategories if not a scam report (they're pre-selected for scam reports)
+        if (!isScamReport) {
+            setTimeout(loadSubcategories, 200);
+        }
     });
 
     // Step 4 back to 3
@@ -565,6 +621,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load subcategories function
     function loadSubcategories() {
         console.log('Loading subcategories...');
+
+        // Skip loading if this is a scam report (already pre-selected)
+        if (isScamReport) {
+            console.log('Scam report mode - subcategories already pre-selected');
+            return;
+        }
 
         const categoryType = document.querySelector('input[name="category_type"]:checked')?.value;
         if (categoryType !== 'existing') {

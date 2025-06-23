@@ -36,6 +36,66 @@
         <div class="content-wrapper">
             @include('home.user_hero')
 
+            @php
+            // Get promoted properties for the slideshow
+            $promotedProperties = App\Models\Property::select(
+                    'properties.id',
+                    'properties.business_name',
+                    'properties.domain',
+                    'properties.city',
+                    'properties.country',
+                    'properties.category',
+                    'properties.profile_picture',
+                    DB::raw('AVG(rates.rate) as average_rating'),
+                    DB::raw('COUNT(rates.id) as review_count')
+                )
+                ->join('ads', 'properties.id', '=', 'ads.property_id')
+                ->leftJoin('rates', function($join) {
+                    $join->on('properties.id', '=', 'rates.property_id')
+                         ->where('rates.status', '=', 'Approved');
+                })
+                ->where('ads.status', 'active')
+                ->where('ads.start_date', '<=', now())
+                ->where('ads.end_date', '>=', now())
+                ->groupBy('properties.id', 'properties.business_name', 'properties.domain', 'properties.city', 'properties.country', 'properties.category', 'properties.profile_picture')
+                ->orderBy('average_rating', 'desc')
+                ->limit(12)
+                ->get();
+
+            // If no promoted properties found, fall back to top-rated properties
+            if ($promotedProperties->isEmpty()) {
+                $promotedProperties = App\Models\Property::select(
+                        'properties.id',
+                        'properties.business_name',
+                        'properties.domain',
+                        'properties.city',
+                        'properties.country',
+                        'properties.category',
+                        'properties.profile_picture',
+                        DB::raw('AVG(rates.rate) as average_rating'),
+                        DB::raw('COUNT(rates.id) as review_count')
+                    )
+                    ->leftJoin('rates', function($join) {
+                        $join->on('properties.id', '=', 'rates.property_id')
+                             ->where('rates.status', '=', 'Approved');
+                    })
+                    ->groupBy('properties.id', 'properties.business_name', 'properties.domain', 'properties.city', 'properties.country', 'properties.category', 'properties.profile_picture')
+                    ->having('average_rating', '>', 0)
+                    ->orderBy('average_rating', 'desc')
+                    ->limit(12)
+                    ->get();
+            }
+            @endphp
+
+            <!-- Featured Properties Slideshow -->
+            @if($promotedProperties->count() > 0)
+            <x-property-slideshow
+                :properties="$promotedProperties"
+                title="Featured Properties"
+                subtitle="Top-rated properties currently being promoted"
+            />
+            @endif
+
             <!-- Property Comparison Tool -->
             <div class="py-12">
                 @include('components.property-comparison-simple')

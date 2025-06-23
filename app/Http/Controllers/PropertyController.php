@@ -239,8 +239,12 @@ class PropertyController extends Controller
             abort(404, 'Category not found or inactive');
         }
 
+        // Filter properties by subcategory ID and approved status
         $query = Property::where('subcategory', $subcategoryModel->id)
-            ->where('status', 'Approved');
+            ->where(function($q) {
+                $q->where('status', 'Approved')
+                  ->orWhere('status', 'Not Claimed');
+            });
 
         // Apply rating filter
         if ($request->rating && $request->rating !== 'any') {
@@ -287,7 +291,10 @@ class PropertyController extends Controller
             ->values();
 
         // Get property types count for display
-        $propertyTypeCounts = Property::where('status', 'Approved')
+        $propertyTypeCounts = Property::where(function($q) {
+                $q->where('status', 'Approved')
+                  ->orWhere('status', 'Not Claimed');
+            })
             ->where('subcategory', $subcategoryModel->id)
             ->selectRaw('property_type, count(*) as count')
             ->groupBy('property_type')

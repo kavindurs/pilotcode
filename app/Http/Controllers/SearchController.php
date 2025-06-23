@@ -17,19 +17,28 @@ class SearchController extends Controller
             return redirect()->back()->with('error', 'Please enter a search term');
         }
 
-        // Search in properties table
-        $properties = Property::where('business_name', 'LIKE', "%{$query}%")
-            ->orWhere('category', 'LIKE', "%{$query}%")
-            ->orWhere('subcategory', 'LIKE', "%{$query}%") // Use subcategory field instead of subcategory_id
-            ->orWhere('city', 'LIKE', "%{$query}%")
-            ->orWhere('country', 'LIKE', "%{$query}%")
-            ->orWhere('domain', 'LIKE', "%{$query}%")
-            ->where('status', 'Approved') // Only include approved businesses
-            ->get();
+        // Search in properties table with filtering - exclude category search, only subcategories
+        $propertiesQuery = Property::where(function($q) use ($query) {
+                $q->where('business_name', 'LIKE', "%{$query}%")
+                  ->orWhere('subcategory', 'LIKE', "%{$query}%")
+                  ->orWhere('city', 'LIKE', "%{$query}%")
+                  ->orWhere('country', 'LIKE', "%{$query}%")
+                  ->orWhere('domain', 'LIKE', "%{$query}%");
+            });
 
-        // Search in subcategories table
-        $subcategories = Subcategory::where('name', 'LIKE', "%{$query}%")
-            ->orWhere('description', 'LIKE', "%{$query}%")
+        // Include properties with status 'Approved' OR any 'Not Claimed' variations
+        $propertiesQuery->where(function($q) {
+            $q->where('status', 'Approved')
+              ->orWhere('status', 'Not Claimed');
+        });
+
+        $properties = $propertiesQuery->get();
+
+        // Search in subcategories table with active filtering
+        $subcategories = Subcategory::where(function($q) use ($query) {
+                $q->where('name', 'LIKE', "%{$query}%")
+                  ->orWhere('description', 'LIKE', "%{$query}%");
+            })
             ->where('is_active', 1) // Only include active subcategories
             ->get();
 
@@ -38,9 +47,15 @@ class SearchController extends Controller
 
         $relatedProperties = [];
         if (!empty($subcategoryNames)) {
-            $relatedProperties = Property::whereIn('subcategory', $subcategoryNames)
-                ->where('status', 'Approved')
-                ->get();
+            $relatedPropertiesQuery = Property::whereIn('subcategory', $subcategoryNames);
+
+            // Apply the same filtering to related properties - include both approved and not claimed
+            $relatedPropertiesQuery->where(function($q) {
+                $q->where('status', 'Approved')
+                  ->orWhere('status', 'Not Claimed');
+            });
+
+            $relatedProperties = $relatedPropertiesQuery->get();
         }
 
         // Merge and remove duplicates
@@ -72,7 +87,6 @@ class SearchController extends Controller
         // Search in properties table - only claim-related statuses
         $properties = Property::where(function($q) use ($query) {
                 $q->where('business_name', 'LIKE', "%{$query}%")
-                  ->orWhere('category', 'LIKE', "%{$query}%")
                   ->orWhere('subcategory', 'LIKE', "%{$query}%")
                   ->orWhere('city', 'LIKE', "%{$query}%")
                   ->orWhere('country', 'LIKE', "%{$query}%")
@@ -98,6 +112,77 @@ class SearchController extends Controller
 
         return response()->json([
             'properties' => $properties,
+            'subcategories' => $subcategories
+        ]);
+    }
+
+    /**
+     * API Search endpoint for AJAX requests with filtering
+     * Returns JSON response with filtered properties and subcategories
+     */
+    public function apiSearch(Request $request)
+    {
+        $query = $request->input('query');
+
+        if (!$query || strlen($query) < 2) {
+            return response()->json([
+                'properties' => [],
+                'subcategories' => []
+            ]);
+        }
+
+        // Search in properties table - exclude category search, only subcategories
+        $propertiesQuery = Property::where(function($q) use ($query) {
+                $q->where('business_name', 'LIKE', "%{$query}%")
+                  ->orWhere('subcategory', 'LIKE', "%{$query}%")
+                  ->orWhere('city', 'LIKE', "%{$query}%")
+                  ->orWhere('country', 'LIKE', "%{$query}%")
+                  ->orWhere('domain', 'LIKE', "%{$query}%");
+            });
+
+        // Include properties with status 'Approved' OR 'Not Claimed' only
+        $propertiesQuery->where(function($q) {
+            $q->where('status', 'Approved')
+              ->orWhere('status', 'Not Claimed');
+        });
+
+        $properties = $propertiesQuery->select('id', 'business_name', 'category', 'subcategory', 'city', 'country', 'profile_picture', 'status')
+            ->limit(10)
+            ->get();
+
+        // Search in subcategories table with active filtering
+        $subcategories = Subcategory::where(function($q) use ($query) {
+                $q->where('name', 'LIKE', "%{$query}%")
+                  ->orWhere('description', 'LIKE', "%{$query}%");
+            })
+            ->where('is_active', 1)
+            ->select('id', 'name', 'description', 'slug')
+            ->limit(5)
+            ->get();
+
+        // Get businesses in matching subcategories using subcategory name, not ID
+        $subcategoryNames = $subcategories->pluck('name')->toArray();
+
+        $relatedProperties = collect();
+        if (!empty($subcategoryNames)) {
+            $relatedPropertiesQuery = Property::whereIn('subcategory', $subcategoryNames);
+
+            // Apply the same filtering to related properties - include both approved and not claimed
+            $relatedPropertiesQuery->where(function($q) {
+                $q->where('status', 'Approved')
+                  ->orWhere('status', 'Not Claimed');
+            });
+
+            $relatedProperties = $relatedPropertiesQuery->select('id', 'business_name', 'category', 'subcategory', 'city', 'country', 'profile_picture', 'status')
+                ->limit(10)
+                ->get();
+        }
+
+        // Merge and remove duplicates
+        $allProperties = $properties->concat($relatedProperties)->unique('id')->take(10);
+
+        return response()->json([
+            'properties' => $allProperties->values(),
             'subcategories' => $subcategories
         ]);
     }
