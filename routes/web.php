@@ -28,6 +28,7 @@ use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Admin\BusinessClaimController;
 use App\Http\Controllers\Admin\ReviewController;
+use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\PropertyAuthController;
 use App\Http\Controllers\PropertyPasswordResetController;
 use App\Http\Controllers\PlanController;
@@ -286,6 +287,11 @@ Route::prefix('admin')->group(function () {
     // Dashboard Route
     Route::get('dashboard', [AdminDashboardController::class, 'index'])
          ->name('admin.dashboard')
+         ->middleware('auth:admin');
+
+    // Analytics Route
+    Route::get('analytics', [\App\Http\Controllers\Admin\AnalyticsController::class, 'index'])
+         ->name('admin.analytics')
          ->middleware('auth:admin');
 
     // Users Management
