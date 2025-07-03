@@ -52,7 +52,7 @@ class SimpleAdController extends Controller
         }
 
         // Check if payment has been completed
-        if ($ad->payment_status !== 'completed') {
+        if ($ad->payment_status !== 'paid') {
             return back()->with('error', 'Payment must be completed before approving the ad.');
         }
 
@@ -94,7 +94,7 @@ class SimpleAdController extends Controller
         ]);
 
         // If payment was completed, process refund
-        if ($ad->payment_status === 'completed' && $ad->payment_intent_id) {  // Using correct column
+        if ($ad->payment_status === 'paid' && $ad->payment_intent_id) {  // Using correct column
             $paymentService = new \App\Services\GenieBusinessPaymentService();
             $refundResult = $paymentService->refundPayment(
                 $ad->payment_intent_id,  // Using correct column

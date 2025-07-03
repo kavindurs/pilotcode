@@ -60,7 +60,7 @@ Route::get('/register', function () {
 
 Route::get('/business', function () {
     return view('business.business_home');
-})->name('register.show');
+})->name('business.show');
 
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/register/business', [AuthController::class, 'registerBusiness'])->name('register.business');
@@ -68,7 +68,7 @@ Route::post('/register/business', [AuthController::class, 'registerBusiness'])->
 // Authentication Routes
 Route::get('/login', function () {
     return view('authontication.user_registration');
-})->name('login');
+})->name('login.show');
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
@@ -205,6 +205,7 @@ Route::prefix('property')->group(function () {
 
     // Payment routes for ads
     Route::get('/ads/{ad}/payment/manual', [\App\Http\Controllers\SimpleAdController::class, 'paymentManual'])->name('property.ads.payment.manual');
+    Route::get('/ads/{ad}/payment/retry', [\App\Http\Controllers\SimpleAdController::class, 'paymentRetry'])->name('property.ads.payment.retry');
     Route::get('/ads/{ad}/payment/success', [\App\Http\Controllers\SimpleAdController::class, 'paymentSuccess'])->name('property.ads.payment.success');
     Route::get('/ads/payment/cancel', [\App\Http\Controllers\SimpleAdController::class, 'paymentCancel'])->name('property.ads.payment.cancel');
     Route::post('/ads/payment/callback', [\App\Http\Controllers\SimpleAdController::class, 'paymentCallback'])->name('property.ads.payment.callback');
@@ -275,7 +276,7 @@ Route::get('/properties', [PropertyController::class, 'index'])->name('property.
 Route::middleware(['auth'])->group(function () {
     Route::post('/rate', [RateController::class, 'store'])->name('rate.store');
     Route::get('/rate/{property}', [RateController::class, 'create'])->name('rate.create');
-    Route::post('/rate/{property}', [RateController::class, 'store'])->name('rate.store');
+    Route::post('/rate/{property}', [RateController::class, 'store'])->name('rate.property.store');
 });
 
 // Admin login routes
@@ -788,9 +789,6 @@ Route::get('/test-review-email', function () {
 });
 
 Route::get('/top-rated-businesses', [App\Http\Controllers\HomeController::class, 'getTopRatedBusinesses'])->name('properties.top_rated');
-
-// You'll also want to make sure you have a property show route defined
-Route::get('/property/{id}', [App\Http\Controllers\PropertyController::class, 'show'])->name('property.show');
 
 // Search route
 Route::get('/search', [App\Http\Controllers\SearchController::class, 'search'])->name('search');

@@ -189,6 +189,15 @@
                                             <i class="fas fa-eye"></i>
                                         </a>
 
+                                        @if($ad->status === 'payment_pending')
+                                            <a href="{{ route('property.ads.payment.retry', $ad) }}"
+                                               class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                                               title="Complete Payment">
+                                                <i class="fas fa-credit-card mr-1"></i>
+                                                Pay Now
+                                            </a>
+                                        @endif
+
                                         @if($ad->status === 'pending')
                                             <a href="{{ route('property.ads.edit', $ad) }}"
                                                class="text-yellow-400 hover:text-yellow-300 transition-colors"

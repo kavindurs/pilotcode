@@ -261,7 +261,7 @@
                         @if($ad->paid_at)
                             <div>
                                 <label class="block text-sm font-medium text-gray-400">Payment Completed</label>
-                                <p class="text-white">{{ $ad->payment_completed_at->format('M j, Y g:i A') }}</p>
+                                <p class="text-white">{{ $ad->paid_at->format('M j, Y g:i A') }}</p>
                             </div>
                         @endif
                     </div>

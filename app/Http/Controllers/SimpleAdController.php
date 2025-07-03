@@ -125,7 +125,7 @@ class SimpleAdController extends Controller
 
         // Create payment request
         $paymentResult = $paymentService->createPayment(
-            $totalAmount,
+            $totalAmount * 100, // Convert to cents for payment gateway
             "Ad Promotion for {$property->business_name} ({$totalDays} days)",
             $property->email ?: 'noemail@example.com',
             $property->business_name,
@@ -263,6 +263,27 @@ class SimpleAdController extends Controller
      */
     public function paymentSuccess(Request $request, Ad $ad)
     {
+        // Handle sandbox payment
+        if ($request->has('sandbox') && $request->sandbox === 'true') {
+            $transactionId = $request->get('transaction_id');
+
+            // Update ad for sandbox payment
+            $ad->update([
+                'payment_intent_id' => $transactionId,
+                'payment_status' => 'paid',
+                'paid_at' => now(),
+                'status' => 'pending', // Now ready for admin review
+                'payment_notes' => json_encode([
+                    'sandbox' => true,
+                    'transaction_id' => $transactionId,
+                    'completed_at' => now()
+                ])
+            ]);
+
+            return redirect()->route('property.ads.index')
+                ->with('success', 'Payment completed successfully! Your promotion request has been submitted for admin review. (Sandbox Mode)');
+        }
+
         // Verify payment with Genie Business API
         $paymentService = new GenieBusinessPaymentService();
         $paymentResult = $paymentService->verifyPayment($ad->payment_intent_id);
@@ -270,7 +291,7 @@ class SimpleAdController extends Controller
         if ($paymentResult['success'] && $paymentResult['data']['status'] === 'completed') {
             // Payment successful, update ad status
             $ad->update([
-                'payment_status' => 'completed',
+                'payment_status' => 'paid',
                 'paid_at' => now(),  // Using correct column
                 'status' => 'pending', // Now ready for admin review
                 'payment_notes' => json_encode($paymentResult['data'])  // Using correct column
@@ -309,7 +330,7 @@ class SimpleAdController extends Controller
             if ($ad) {
                 if ($status === 'completed') {
                     $ad->update([
-                        'payment_status' => 'completed',
+                        'payment_status' => 'paid',
                         'paid_at' => now(),  // Using correct column
                         'status' => 'pending',
                         'payment_notes' => json_encode($request->all())  // Using correct column
@@ -337,5 +358,71 @@ class SimpleAdController extends Controller
         }
 
         return view('property.ads.payment_manual', compact('ad'));
+    }
+
+    /**
+     * Retry payment for a pending ad
+     */
+    public function paymentRetry(Ad $ad)
+    {
+        // Check if property is logged in and owns this ad
+        if (!session('property_id') || $ad->property_id !== session('property_id')) {
+            abort(403, 'Unauthorized access to this ad.');
+        }
+
+        // Only allow retry for ads with payment_pending status
+        if ($ad->status !== 'payment_pending') {
+            return redirect()->route('property.ads.index')
+                ->with('error', 'Payment retry is only available for ads with pending payment status.');
+        }
+
+        // Initialize payment service
+        $paymentService = new GenieBusinessPaymentService();
+
+        // Get property details
+        $property = Property::find($ad->property_id);
+
+        // Create payment request
+        $paymentResult = $paymentService->createPayment(
+            $ad->total_amount * 100, // Convert to cents for payment gateway
+            'Property Ad Promotion - ' . ($property->business_name ?? 'Property #' . $property->id),
+            $property->email ?? 'noemail@property' . $property->id . '.local',
+            $property->business_name ?? $property->contact_person ?? 'Property Owner #' . $property->id,
+            $ad->property_id,
+            $ad->id,
+            route('property.ads.payment.success', $ad->id)
+        );
+
+        if ($paymentResult['success']) {
+            // Update payment intent ID for the retry
+            $ad->update([
+                'payment_intent_id' => $paymentResult['data']['id'] ?? null,
+                'payment_notes' => json_encode($paymentResult['data'])
+            ]);
+
+            // Check if this is a sandbox environment
+            if (isset($paymentResult['data']['sandbox']) && $paymentResult['data']['sandbox']) {
+                // Redirect to sandbox simulation
+                $transactionId = $paymentResult['data']['id'];
+                return redirect()->route('property.ads.payment.success', [
+                    'ad' => $ad->id,
+                    'sandbox' => 'true',
+                    'transaction_id' => $transactionId
+                ]);
+            } else {
+                // Redirect to actual payment page
+                $paymentUrl = $paymentResult['data']['payment_url'] ?? $paymentResult['data']['checkout_url'];
+                if ($paymentUrl) {
+                    return redirect($paymentUrl);
+                } else {
+                    // Fallback to manual payment page
+                    return redirect()->route('property.ads.payment.manual', $ad);
+                }
+            }
+        } else {
+            // Payment creation failed
+            return redirect()->route('property.ads.index')
+                ->with('error', 'Failed to initiate payment: ' . ($paymentResult['error'] ?? 'Unknown error'));
+        }
     }
 }
