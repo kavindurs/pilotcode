@@ -223,6 +223,13 @@ Route::prefix('property')->group(function () {
     Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
     Route::post('/plans/select', [PlanController::class, 'select'])->name('plans.select');
     Route::get('/plans/activated', [PlanController::class, 'activated'])->name('plans.activated');
+
+    // Plan Payment routes (new payment gateway integration)
+    Route::get('/plans/checkout', [\App\Http\Controllers\PlanPaymentController::class, 'checkout'])->name('plans.checkout');
+    Route::post('/plans/payment/process', [\App\Http\Controllers\PlanPaymentController::class, 'processPayment'])->name('plans.payment.process');
+    Route::get('/plans/payment/{payment}/success', [\App\Http\Controllers\PlanPaymentController::class, 'paymentSuccess'])->name('plans.payment.success');
+    Route::get('/plans/payment/{payment}/cancel', [\App\Http\Controllers\PlanPaymentController::class, 'paymentCancel'])->name('plans.payment.cancel');
+    Route::post('/plans/payment/{payment}/verify', [\App\Http\Controllers\PlanPaymentController::class, 'verifyPayment'])->name('plans.payment.verify');
 });
 
 // Payment routes (requires property authentication via session check in controller)

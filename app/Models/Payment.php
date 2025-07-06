@@ -26,7 +26,10 @@ class Payment extends Model
         'customer_name',
         'customer_email',
         'tokenize',
-        'completed_at'
+        'completed_at',
+        'local_id',
+        'paid_at',
+        'payment_response'
     ];
 
     protected $casts = [

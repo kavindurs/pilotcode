@@ -155,7 +155,7 @@
                                         </span>
                                         @if($ad->total_amount)
                                             <div class="text-xs text-gray-400">
-                                                Cost: ${{ number_format($ad->total_amount, 2) }} USD
+                                                Cost: ${{ number_format($ad->total_amount/300, 2) }} USD
                                             </div>
                                         @endif
                                         @if($ad->payment_status)

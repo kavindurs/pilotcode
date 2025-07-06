@@ -7,12 +7,7 @@
 <div class="space-y-6">
     <!-- Breadcrumb -->
     <nav class="flex mb-6" aria-label="Breadcrumb">
-        <ol                        @if($ad->paid_at)
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400">Payment Completed</label>
-                                <p class="text-white">{{ $ad->paid_at->format('M j, Y g:i A') }}</p>
-                            </div>
-                        @endif="inline-flex items-center space-x-1 md:space-x-3">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
             <li class="inline-flex items-center">
                 <a href="{{ route('admin.dashboard') }}" class="text-gray-400 hover:text-white transition-colors">
                     <i class="fas fa-home mr-2"></i>
@@ -215,7 +210,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-400">Total Amount</label>
-                                <p class="text-white font-bold">${{ number_format($ad->total_amount, 2) }} USD</p>
+                                <p class="text-white font-bold">LKR {{ number_format($ad->total_amount, 2) }} </p>
                             </div>
                         </div>
 

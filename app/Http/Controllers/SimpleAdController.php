@@ -117,7 +117,7 @@ class SimpleAdController extends Controller
             'end_date' => $validated['end_date'],
             'amount' => $totalAmount,  // Using existing column
             'days' => $totalDays,      // Using existing column
-            'total_amount' => $totalAmount,  // Also populate this for consistency
+            'total_amount' => ($totalAmount)*300,  // Also populate this for consistency
             'total_days' => $totalDays,      // Also populate this for consistency
             'daily_rate' => $dailyCost,
             'payment_status' => 'pending',

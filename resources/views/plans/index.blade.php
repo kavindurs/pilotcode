@@ -142,9 +142,9 @@
                   <span><strong>Performance Overview:</strong> Yes</span>
                 </li>
               </ul>
-              <form action="{{ route('payment.checkout.show') }}" method="GET" class="mt-6">
+              <form action="{{ route('plans.select') }}" method="POST" class="mt-6">
+                @csrf
                 <input type="hidden" name="plan_id" value="{{ $plan->id }}">
-                <input type="hidden" name="amount" value="{{ $plan->price }}">
                 <button type="submit" class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300">
                   Select Plan
                 </button>

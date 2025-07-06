@@ -63,9 +63,8 @@ class PlanController extends Controller
 
         $plan = Plan::findOrFail($request->plan_id);
 
-        // For now, we'll redirect to the payment checkout instead of directly updating
-        // because plan selection should go through the payment process
-        return redirect()->route('payment.checkout.show', [
+        // For now, we'll redirect to our new payment checkout instead of the old one
+        return redirect()->route('plans.checkout', [
             'plan_id' => $plan->id,
             'amount' => $plan->price
         ])->with('success', 'Please complete the payment to activate your ' . $plan->name . ' plan.');
