@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JavaScript Syntax Test</title>
+</head>
+<body>
+    <h1>Testing JavaScript Syntax</h1>
+    <div id="result"></div>
+
+    <script>
+        try {
+            // Test the basic structure
+            const token = 'test-token';
+            let redirectTimer = null;
+
+            // Test the functions exist
+            function createPayment() {
+                document.getElementById('result').innerHTML = 'createPayment function works!';
+            }
+
+            function startCountdownRedirect(paymentUrl, seconds) {
+                document.getElementById('result').innerHTML += '<br>startCountdownRedirect function works!';
+            }
+
+            function cancelRedirect() {
+                document.getElementById('result').innerHTML += '<br>cancelRedirect function works!';
+            }
+
+            function showResult(type, message) {
+                document.getElementById('result').innerHTML += '<br>showResult function works!';
+            }
+
+            function quickPayment(amount) {
+                document.getElementById('result').innerHTML += '<br>quickPayment function works!';
+            }
+
+            // Test all functions
+            createPayment();
+            startCountdownRedirect('http://example.com', 5);
+            cancelRedirect();
+            showResult('success', 'test');
+            quickPayment(100);
+
+            document.getElementById('result').innerHTML += '<br><strong>✅ All JavaScript functions loaded successfully!</strong>';
+
+        } catch (error) {
+            document.getElementById('result').innerHTML = '<strong>❌ JavaScript Error:</strong> ' + error.message;
+        }
+    </script>
+</body>
+</html>

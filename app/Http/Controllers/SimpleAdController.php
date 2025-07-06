@@ -7,6 +7,7 @@ use App\Models\Property;
 use App\Models\AdminSetting;
 use App\Services\GenieBusinessPaymentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class SimpleAdController extends Controller
@@ -27,6 +28,9 @@ class SimpleAdController extends Controller
         if (!$property) {
             return redirect()->route('property.login')->with('error', 'Property not found.');
         }
+
+        // Auto-update payment statuses before displaying ads
+        $this->autoUpdatePaymentStatuses();
 
         // Get ads for this property
         $ads = Ad::where('property_id', $property->id)
@@ -127,12 +131,19 @@ class SimpleAdController extends Controller
         $paymentResult = $paymentService->createPayment(
             $totalAmount * 100, // Convert to cents for payment gateway
             "Ad Promotion for {$property->business_name} ({$totalDays} days)",
-            $property->email ?: 'noemail@example.com',
+            $property->business_email ?: 'noemail@example.com',
             $property->business_name,
             $property->id,
             $ad->id,
             route('property.ads.payment.success', $ad->id)
         );
+
+        // Debug logging
+        Log::info('Payment Service Result', [
+            'success' => $paymentResult['success'],
+            'data' => $paymentResult['data'] ?? null,
+            'error' => $paymentResult['error'] ?? null
+        ]);
 
         if ($paymentResult['success']) {
             // Store payment ID and redirect to payment page
@@ -141,15 +152,31 @@ class SimpleAdController extends Controller
                 'payment_notes' => json_encode($paymentResult['data'])         // Using correct column
             ]);
 
-            // Redirect to payment gateway
+            // Redirect to payment gateway or verification page
             if (isset($paymentResult['data']['payment_url'])) {
+                Log::info('Redirecting to payment URL', [
+                    'payment_url' => $paymentResult['data']['payment_url'],
+                    'ad_id' => $ad->id
+                ]);
+
+                // Redirect directly to payment gateway for both localhost and production
+                Log::info('Redirecting to payment gateway', [
+                    'payment_url' => $paymentResult['data']['payment_url'],
+                    'ad_id' => $ad->id
+                ]);
                 return redirect($paymentResult['data']['payment_url']);
             } else {
-                // If no payment URL, show payment details and manual completion
-                return redirect()->route('property.ads.payment.manual', $ad->id);
+                Log::warning('No payment URL in response, redirecting to ads index');
+                // If no payment URL, redirect to ads index with error message
+                return redirect()->route('property.ads.index')
+                    ->with('error', 'Payment URL not available. Please try again or contact support.');
             }
         } else {
             // Payment creation failed, delete the ad and show error
+            Log::error('Payment creation failed, deleting ad', [
+                'ad_id' => $ad->id,
+                'error' => $paymentResult['error']
+            ]);
             $ad->delete();
 
             return back()->withErrors([
@@ -263,6 +290,14 @@ class SimpleAdController extends Controller
      */
     public function paymentSuccess(Request $request, Ad $ad)
     {
+        // Log all incoming request data for debugging
+        Log::info('Payment Success Callback', [
+            'ad_id' => $ad->id,
+            'ad_payment_intent_id' => $ad->payment_intent_id,
+            'request_params' => $request->all(),
+            'request_url' => $request->fullUrl()
+        ]);
+
         // Handle sandbox payment
         if ($request->has('sandbox') && $request->sandbox === 'true') {
             $transactionId = $request->get('transaction_id');
@@ -284,23 +319,81 @@ class SimpleAdController extends Controller
                 ->with('success', 'Payment completed successfully! Your promotion request has been submitted for admin review. (Sandbox Mode)');
         }
 
-        // Verify payment with Genie Business API
-        $paymentService = new GenieBusinessPaymentService();
-        $paymentResult = $paymentService->verifyPayment($ad->payment_intent_id);
+        // Get transaction ID from request parameters or use stored payment intent ID
+        $transactionId = $request->get('transaction_id') ??
+                        $request->get('id') ??
+                        $ad->payment_intent_id;
 
-        if ($paymentResult['success'] && $paymentResult['data']['status'] === 'completed') {
-            // Payment successful, update ad status
-            $ad->update([
-                'payment_status' => 'paid',
-                'paid_at' => now(),  // Using correct column
-                'status' => 'pending', // Now ready for admin review
-                'payment_notes' => json_encode($paymentResult['data'])  // Using correct column
+        if (!$transactionId) {
+            Log::error('No transaction ID found for payment verification', [
+                'ad_id' => $ad->id,
+                'request_params' => $request->all()
             ]);
 
             return redirect()->route('property.ads.index')
-                ->with('success', 'Payment completed successfully! Your promotion request has been submitted for admin review.');
+                ->with('error', 'Payment verification failed: No transaction ID found. Please contact support.');
+        }
+
+        // Verify payment with Genie Business API
+        $paymentService = new GenieBusinessPaymentService();
+        $paymentResult = $paymentService->verifyPayment($transactionId);
+
+        Log::info('Payment Verification Result', [
+            'ad_id' => $ad->id,
+            'transaction_id' => $transactionId,
+            'verification_success' => $paymentResult['success'],
+            'verification_data' => $paymentResult['data'] ?? null,
+            'verification_error' => $paymentResult['error'] ?? null
+        ]);        if ($paymentResult['success'] && isset($paymentResult['data'])) {
+            // Genie Business uses 'state' field, not 'status'
+            $paymentStatus = $paymentResult['data']['state'] ?? $paymentResult['data']['status'] ?? 'unknown';
+
+            Log::info('Payment verification response details', [
+                'ad_id' => $ad->id,
+                'transaction_id' => $transactionId,
+                'payment_state' => $paymentResult['data']['state'] ?? 'not_found',
+                'payment_status' => $paymentResult['data']['status'] ?? 'not_found',
+                'resolved_status' => $paymentStatus
+            ]);
+
+            // Accept various successful payment statuses (Genie Business uses 'CONFIRMED')
+            if (in_array($paymentStatus, ['CONFIRMED', 'completed', 'success', 'confirmed', 'paid'])) {
+                // Payment successful, update ad status
+                $ad->update([
+                    'payment_intent_id' => $transactionId,
+                    'payment_status' => 'paid',
+                    'paid_at' => now(),
+                    'status' => 'pending', // Now ready for admin review
+                    'payment_notes' => json_encode($paymentResult['data'])
+                ]);
+
+                Log::info('Ad status updated to paid', [
+                    'ad_id' => $ad->id,
+                    'transaction_id' => $transactionId,
+                    'payment_status' => $paymentStatus
+                ]);
+
+                return redirect()->route('property.ads.index')
+                    ->with('success', 'Payment completed successfully! Your promotion request has been submitted for admin review.');
+            } else {
+                // Payment not yet completed
+                Log::warning('Payment not completed', [
+                    'ad_id' => $ad->id,
+                    'transaction_id' => $transactionId,
+                    'payment_status' => $paymentStatus
+                ]);
+
+                return redirect()->route('property.ads.index')
+                    ->with('error', "Payment status: {$paymentStatus}. Please complete your payment or contact support.");
+            }
         } else {
             // Payment verification failed
+            Log::error('Payment verification failed', [
+                'ad_id' => $ad->id,
+                'transaction_id' => $transactionId,
+                'error' => $paymentResult['error'] ?? 'Unknown error'
+            ]);
+
             return redirect()->route('property.ads.index')
                 ->with('error', 'Payment verification failed. Please contact support if this issue persists.');
         }
@@ -357,7 +450,7 @@ class SimpleAdController extends Controller
             abort(403, 'Unauthorized access to this ad.');
         }
 
-        return view('property.ads.payment_manual', compact('ad'));
+        return view('property.ads.payment_verification', compact('ad'));
     }
 
     /**
@@ -376,17 +469,59 @@ class SimpleAdController extends Controller
                 ->with('error', 'Payment retry is only available for ads with pending payment status.');
         }
 
-        // Initialize payment service
+        // First, check if there's an existing payment that might have been completed
+        if ($ad->payment_intent_id) {
+            $paymentService = new GenieBusinessPaymentService();
+            $existingPaymentResult = $paymentService->verifyPayment($ad->payment_intent_id);
+
+            Log::info('Checking existing payment before retry', [
+                'ad_id' => $ad->id,
+                'payment_intent_id' => $ad->payment_intent_id,
+                'verification_result' => $existingPaymentResult
+            ]);
+
+            if ($existingPaymentResult['success'] && isset($existingPaymentResult['data'])) {
+                $paymentStatus = $existingPaymentResult['data']['state'] ?? $existingPaymentResult['data']['status'] ?? 'unknown';
+
+                // If payment is already confirmed, update the ad
+                if (in_array($paymentStatus, ['CONFIRMED', 'completed', 'success', 'confirmed', 'paid'])) {
+                    $ad->update([
+                        'payment_status' => 'paid',
+                        'paid_at' => now(),
+                        'status' => 'pending',
+                        'payment_notes' => json_encode($existingPaymentResult['data'])
+                    ]);
+
+                    return redirect()->route('property.ads.index')
+                        ->with('success', 'Payment found and verified! Your promotion request has been submitted for admin review.');
+                }
+            }
+        }
+
+        // Check for other potential payments by searching with ad-specific local IDs
         $paymentService = new GenieBusinessPaymentService();
+        $expectedAmount = $ad->total_amount * 100; // Convert to cents
+
+        // Try to find payments by checking common patterns of local IDs for this ad
+        $possibleLocalIds = [
+            'AD_' . $ad->id . '_',  // Current pattern
+            'ad_' . $ad->id . '_',  // Lowercase variant
+            $ad->id                 // Just the ad ID
+        ];
+
+        foreach ($possibleLocalIds as $localIdPattern) {
+            // This would need to be implemented in the payment service if we had a search function
+            // For now, we'll proceed with creating a new payment
+        }
 
         // Get property details
         $property = Property::find($ad->property_id);
 
-        // Create payment request
+        // Create new payment request
         $paymentResult = $paymentService->createPayment(
             $ad->total_amount * 100, // Convert to cents for payment gateway
             'Property Ad Promotion - ' . ($property->business_name ?? 'Property #' . $property->id),
-            $property->email ?? 'noemail@property' . $property->id . '.local',
+            $property->business_email ?? 'noemail@property' . $property->id . '.local',
             $property->business_name ?? $property->contact_person ?? 'Property Owner #' . $property->id,
             $ad->property_id,
             $ad->id,
@@ -410,13 +545,18 @@ class SimpleAdController extends Controller
                     'transaction_id' => $transactionId
                 ]);
             } else {
-                // Redirect to actual payment page
+                // Redirect to actual payment URL
                 $paymentUrl = $paymentResult['data']['payment_url'] ?? $paymentResult['data']['checkout_url'];
                 if ($paymentUrl) {
+                    Log::info('Redirecting to payment gateway', [
+                        'ad_id' => $ad->id,
+                        'payment_url' => $paymentUrl
+                    ]);
                     return redirect($paymentUrl);
                 } else {
-                    // Fallback to manual payment page
-                    return redirect()->route('property.ads.payment.manual', $ad);
+                    // Fallback to ads index if no payment URL
+                    return redirect()->route('property.ads.index')
+                        ->with('error', 'Payment URL not available. Please try again or contact support.');
                 }
             }
         } else {
@@ -424,5 +564,128 @@ class SimpleAdController extends Controller
             return redirect()->route('property.ads.index')
                 ->with('error', 'Failed to initiate payment: ' . ($paymentResult['error'] ?? 'Unknown error'));
         }
+    }
+
+    /**
+     * Manually verify payment by transaction ID
+     */
+    public function verifyPaymentManual(Request $request, Ad $ad)
+    {
+        // Check if property is logged in and owns this ad
+        if (!session('property_id') || $ad->property_id !== session('property_id')) {
+            abort(403, 'Unauthorized access to this ad.');
+        }
+
+        $transactionId = $request->get('transaction_id');
+
+        if (!$transactionId) {
+            return back()->with('error', 'Transaction ID is required for manual verification.');
+        }
+
+        // Verify payment with Genie Business API
+        $paymentService = new GenieBusinessPaymentService();
+        $paymentResult = $paymentService->verifyPayment($transactionId);
+
+        Log::info('Manual Payment Verification', [
+            'ad_id' => $ad->id,
+            'transaction_id' => $transactionId,
+            'verification_success' => $paymentResult['success'],
+            'verification_data' => $paymentResult['data'] ?? null
+        ]);
+
+        if ($paymentResult['success'] && isset($paymentResult['data'])) {
+            $paymentData = $paymentResult['data'];
+            $paymentStatus = $paymentData['state'] ?? $paymentData['status'] ?? 'unknown';
+
+            // Check if payment is for this ad (by local_id or amount)
+            $expectedLocalId = 'AD_' . $ad->id . '_';
+            $localId = $paymentData['localId'] ?? '';
+            $paymentAmount = $paymentData['amount'] ?? 0;
+            $expectedAmount = $ad->total_amount * 100; // Convert to cents
+
+            // More flexible matching: either local ID starts with expected pattern OR amount matches
+            $localIdMatches = str_starts_with($localId, $expectedLocalId);
+            $amountMatches = $paymentAmount == $expectedAmount;
+
+            Log::info('Payment verification matching', [
+                'ad_id' => $ad->id,
+                'transaction_id' => $transactionId,
+                'expected_local_id' => $expectedLocalId,
+                'actual_local_id' => $localId,
+                'local_id_matches' => $localIdMatches,
+                'expected_amount' => $expectedAmount,
+                'actual_amount' => $paymentAmount,
+                'amount_matches' => $amountMatches
+            ]);
+
+            if (!$localIdMatches && !$amountMatches) {
+                return back()->with('error', 'Payment verification failed: Transaction does not match this ad (Expected amount: LKR ' . number_format($ad->total_amount, 2) . ', Found: LKR ' . number_format($paymentAmount / 100, 2) . ').');
+            }
+
+            // Accept successful payment statuses
+            if (in_array($paymentStatus, ['CONFIRMED', 'completed', 'success', 'confirmed', 'paid'])) {
+                // Update ad with successful payment
+                $ad->update([
+                    'payment_intent_id' => $transactionId,
+                    'payment_status' => 'paid',
+                    'paid_at' => now(),
+                    'status' => 'pending',
+                    'payment_notes' => json_encode($paymentData)
+                ]);
+
+                Log::info('Manual payment verification successful', [
+                    'ad_id' => $ad->id,
+                    'transaction_id' => $transactionId,
+                    'payment_status' => $paymentStatus
+                ]);
+
+                return redirect()->route('property.ads.index')
+                    ->with('success', 'Payment verified successfully! Your ad is now ready for admin review.');
+            } else {
+                return back()->with('error', 'Payment verification failed: Payment status is ' . $paymentStatus);
+            }
+        } else {
+            return back()->with('error', 'Payment verification failed: Could not verify payment with gateway.');
+        }
+    }
+
+    /**
+     * Auto-update payment statuses for all payment_pending ads
+     */
+    private function autoUpdatePaymentStatuses()
+    {
+        $pendingAds = Ad::where('status', 'payment_pending')
+                        ->whereNotNull('payment_intent_id')
+                        ->get();
+
+        $paymentService = new GenieBusinessPaymentService();
+        $updatedCount = 0;
+
+        foreach ($pendingAds as $ad) {
+            $result = $paymentService->verifyPayment($ad->payment_intent_id);
+
+            if ($result['success'] && isset($result['data'])) {
+                $paymentStatus = $result['data']['state'] ?? $result['data']['status'] ?? 'unknown';
+
+                if (in_array($paymentStatus, ['CONFIRMED', 'completed', 'success', 'confirmed', 'paid'])) {
+                    $ad->update([
+                        'payment_status' => 'paid',
+                        'paid_at' => now(),
+                        'status' => 'pending',
+                        'payment_notes' => json_encode($result['data'])
+                    ]);
+
+                    Log::info('Auto-updated payment status', [
+                        'ad_id' => $ad->id,
+                        'payment_intent_id' => $ad->payment_intent_id,
+                        'payment_status' => $paymentStatus
+                    ]);
+
+                    $updatedCount++;
+                }
+            }
+        }
+
+        return $updatedCount;
     }
 }

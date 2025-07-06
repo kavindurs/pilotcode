@@ -207,6 +207,7 @@ Route::prefix('property')->group(function () {
     Route::get('/ads/{ad}/payment/manual', [\App\Http\Controllers\SimpleAdController::class, 'paymentManual'])->name('property.ads.payment.manual');
     Route::get('/ads/{ad}/payment/retry', [\App\Http\Controllers\SimpleAdController::class, 'paymentRetry'])->name('property.ads.payment.retry');
     Route::get('/ads/{ad}/payment/success', [\App\Http\Controllers\SimpleAdController::class, 'paymentSuccess'])->name('property.ads.payment.success');
+    Route::post('/ads/{ad}/payment/verify-manual', [\App\Http\Controllers\SimpleAdController::class, 'verifyPaymentManual'])->name('property.ads.payment.verify.manual');
     Route::get('/ads/payment/cancel', [\App\Http\Controllers\SimpleAdController::class, 'paymentCancel'])->name('property.ads.payment.cancel');
     Route::post('/ads/payment/callback', [\App\Http\Controllers\SimpleAdController::class, 'paymentCallback'])->name('property.ads.payment.callback');
 
@@ -972,5 +973,76 @@ Route::get('/api/business-claim/subcategories/{categoryId}', [App\Http\Controlle
 
 // Public business search for claiming
 Route::get('/business-search', [App\Http\Controllers\BusinessClaimController::class, 'search'])->name('business-claim.search');
+
+// Test Payment Interface Routes
+Route::get('/test-payment', function () {
+    return response()->file(public_path('../test-payment-interface.html'));
+})->name('test.payment.interface');
+
+Route::get('/test-payment-interface', function () {
+    return response()->file(public_path('../test-payment-interface.html'));
+});
+
+// Test Payment Creation Route
+Route::post('/test-payment-create', function (Illuminate\Http\Request $request) {
+    try {
+        // Get JSON input
+        $amount = floatval($request->input('amount', 0));
+        $currency = $request->input('currency', 'USD');
+        $description = $request->input('description', 'Test Payment');
+        $customerName = $request->input('customer_name', 'Test Customer');
+        $customerEmail = $request->input('customer_email', 'test@example.com');
+
+        if ($amount <= 0) {
+            throw new Exception('Invalid amount');
+        }
+
+        // Get a test property
+        $property = \App\Models\Property::first();
+        if (!$property) {
+            throw new Exception('No properties found in database');
+        }
+
+        // Initialize payment service
+        $paymentService = new \App\Services\GenieBusinessPaymentService();
+
+        // Generate unique ad ID for testing
+        $adId = time() . '_' . rand(1000, 9999);
+
+        // Create payment
+        $paymentResult = $paymentService->createPayment(
+            $amount, // Amount in USD (service will handle conversion)
+            $description,
+            $customerEmail,
+            $customerName,
+            $property->id,
+            $adId,
+            "http://127.0.0.1:8000/property/ads/{$adId}/payment/success"
+        );
+
+        if ($paymentResult['success']) {
+            return response()->json([
+                'success' => true,
+                'data' => $paymentResult['data'],
+                'message' => 'Payment created successfully'
+            ]);
+        } else {
+            throw new Exception($paymentResult['error'] ?? 'Payment creation failed');
+        }
+
+    } catch (Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 400);
+    }
+})->middleware('web');
+
+// Test Payment Interface Route
+Route::get('/test-payment', function () {
+    return view('payment-test');
+});
+
+// Existing property routes...
 
 

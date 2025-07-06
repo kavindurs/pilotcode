@@ -14,62 +14,82 @@ class GenieBusinessPaymentService
 
     public function __construct()
     {
-        $this->appId = config('genie_business.app_id');
-        $this->appKey = config('genie_business.app_key');
-        $this->baseUrl = config('genie_business.api_url');
+        $this->appId = env('GENIE_BUSINESS_APP_ID');
+        $this->appKey = env('GENIE_BUSINESS_APP_KEY');
+        $this->baseUrl = env('GENIE_BUSINESS_API_URL');
     }
 
     /**
-     * Create a payment request
+     * Create a payment request using Genie Business API
      */
     public function createPayment($amount, $description, $customerEmail, $customerName, $propertyId, $adId, $returnUrl = null)
     {
-        // If in sandbox environment and getting forbidden errors, use simulation
-        if (config('genie_business.environment') === 'sandbox') {
-            return $this->simulatePayment($amount, $description, $customerEmail, $customerName, $propertyId, $adId, $returnUrl);
-        }
-
         try {
-            $paymentData = [
-                'amount' => $amount,
-                'currency' => config('genie_business.currency', 'LKR'), // Use LKR for Genie Business
-                'description' => $description,
-                'customerEmail' => $customerEmail,
-                'customerName' => $customerName,
-                'metadata' => json_encode([
-                    'property_id' => $propertyId,
-                    'ad_id' => $adId,
-                    'type' => 'ad_promotion'
-                ]),
-                'returnUrl' => $returnUrl ?: route('property.ads.payment.callback'),
-                'cancelUrl' => route('property.ads.payment.cancel')
+            // Convert amount from LKR to cents (Genie expects amount in cents)
+            $amountInCents = (int) ($amount * 300);
+
+            $payload = [
+                'amount' => $amountInCents,
+                'currency' => 'LKR',
+                'localId' => "AD_{$adId}_" . time(),
+                'customerReference' => $customerName ?? "Property_{$propertyId}",
             ];
 
-            // Use the correct endpoint from config
-            $endpoint = $this->baseUrl . config('genie_business.endpoints.transactions');
+            // Add callback URLs carefully (Genie Business may reject localhost URLs)
+            if ($returnUrl) {
+                if (str_contains($returnUrl, '127.0.0.1') || str_contains($returnUrl, 'localhost')) {
+                    // For localhost development, skip redirectUrl to avoid API rejection
+                    // The user will need to manually return to the success page
+                    Log::info('Skipping localhost redirect URL to avoid API rejection', ['returnUrl' => $returnUrl]);
+                } else {
+                    // Production URL, safe to add
+                    $payload['redirectUrl'] = $returnUrl;
+                    Log::info('Adding redirect URL to payment', ['redirectUrl' => $returnUrl]);
+                }
+            }
+
+            Log::info('Genie Business Payment Request', [
+                'endpoint' => $this->baseUrl . '/public/v2/transactions',
+                'payload' => $payload,
+                'headers' => [
+                    'Authorization' => substr($this->appKey, 0, 20) . '...',
+                    'Content-Type' => 'application/json'
+                ]
+            ]);
 
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->appKey,
+                'Authorization' => $this->appKey,
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
-                'X-App-ID' => $this->appId
-            ])->timeout(30)->post($endpoint, $paymentData);
+            ])->timeout(30)->post($this->baseUrl . '/public/v2/transactions', $payload);
 
             if ($response->successful()) {
+                $data = $response->json();
+
+                Log::info('Genie Business Payment Response', ['response' => $data]);
+
                 return [
                     'success' => true,
-                    'data' => $response->json()
+                    'data' => [
+                        'id' => $data['id'] ?? null,
+                        'payment_url' => $data['url'] ?? null,
+                        'status' => $data['status'] ?? 'pending',
+                        'amount' => $amountInCents,
+                        'currency' => 'LKR',
+                        'local_id' => $payload['localId'],
+                        'sandbox' => false // Real Genie Business transaction
+                    ]
                 ];
             } else {
                 Log::error('Genie Business Payment Creation Failed', [
                     'status' => $response->status(),
                     'response' => $response->body(),
-                    'payment_data' => $paymentData
+                    'payload' => $payload
                 ]);
 
                 return [
                     'success' => false,
-                    'error' => 'Payment creation failed: ' . $response->body()
+                    'error' => 'Payment gateway error: ' . $response->body()
                 ];
             }
         } catch (Exception $e) {
@@ -86,42 +106,40 @@ class GenieBusinessPaymentService
     }
 
     /**
-     * Verify a payment
+     * Verify a payment using Genie Business API
      */
-    public function verifyPayment($paymentId)
+    public function verifyPayment($transactionId)
     {
         // Handle sandbox transactions
-        if (config('genie_business.environment') === 'sandbox' && strpos($paymentId, 'sandbox_') === 0) {
+        if (strpos($transactionId, 'sandbox_') === 0) {
             return [
                 'success' => true,
                 'data' => [
-                    'id' => $paymentId,
+                    'id' => $transactionId,
                     'status' => 'completed',
-                    'amount' => 1000, // Default amount for sandbox
-                    'currency' => config('genie_business.currency', 'LKR'),
+                    'amount' => 0,
+                    'currency' => 'USD',
                     'sandbox' => true
                 ]
             ];
         }
 
         try {
-            // Use the correct endpoint from config
-            $endpoint = $this->baseUrl . config('genie_business.endpoints.transaction_status') . $paymentId;
-
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->appKey,
+                'Authorization' => $this->appKey,
                 'Accept' => 'application/json',
-                'X-App-ID' => $this->appId
-            ])->timeout(30)->get($endpoint);
+            ])->timeout(30)->get($this->baseUrl . "/public/v2/transactions/{$transactionId}");
 
             if ($response->successful()) {
+                $data = $response->json();
+
                 return [
                     'success' => true,
-                    'data' => $response->json()
+                    'data' => $data
                 ];
             } else {
                 Log::error('Genie Business Payment Verification Failed', [
-                    'payment_id' => $paymentId,
+                    'transaction_id' => $transactionId,
                     'status' => $response->status(),
                     'response' => $response->body()
                 ]);
@@ -133,7 +151,7 @@ class GenieBusinessPaymentService
             }
         } catch (Exception $e) {
             Log::error('Genie Business Payment Verification Exception', [
-                'payment_id' => $paymentId,
+                'transaction_id' => $transactionId,
                 'message' => $e->getMessage()
             ]);
 
@@ -147,23 +165,22 @@ class GenieBusinessPaymentService
     /**
      * Process a refund
      */
-    public function refundPayment($paymentId, $amount = null, $reason = null)
+    public function refundPayment($transactionId, $amount = null, $reason = null)
     {
         try {
-            $refundData = [
-                'payment_id' => $paymentId,
-                'reason' => $reason ?: 'Ad promotion cancelled'
+            $payload = [
+                'reason' => $reason ?: 'Admin initiated refund'
             ];
 
             if ($amount) {
-                $refundData['amount'] = $amount;
+                $payload['amount'] = (int) ($amount * 100); // Convert to cents
             }
 
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->appKey,
+                'Authorization' => $this->appKey,
                 'Content-Type' => 'application/json',
-                'X-App-ID' => $this->appId
-            ])->post($this->baseUrl . '/refunds', $refundData);
+                'Accept' => 'application/json',
+            ])->timeout(30)->post($this->baseUrl . "/v2/transactions/{$transactionId}/refund", $payload);
 
             if ($response->successful()) {
                 return [
@@ -172,7 +189,7 @@ class GenieBusinessPaymentService
                 ];
             } else {
                 Log::error('Genie Business Refund Failed', [
-                    'payment_id' => $paymentId,
+                    'transaction_id' => $transactionId,
                     'status' => $response->status(),
                     'response' => $response->body()
                 ]);
@@ -184,7 +201,7 @@ class GenieBusinessPaymentService
             }
         } catch (Exception $e) {
             Log::error('Genie Business Refund Exception', [
-                'payment_id' => $paymentId,
+                'transaction_id' => $transactionId,
                 'message' => $e->getMessage()
             ]);
 
@@ -196,29 +213,34 @@ class GenieBusinessPaymentService
     }
 
     /**
-     * Simulate payment for sandbox environment
+     * Simulate payment for sandbox environment (fallback)
      */
     private function simulatePayment($amount, $description, $customerEmail, $customerName, $propertyId, $adId, $returnUrl = null)
     {
         // Generate a mock transaction ID
         $transactionId = 'sandbox_' . time() . '_' . $adId;
 
+        $paymentUrl = config('app.url') . "/property/ads/{$adId}/payment/success?" . http_build_query([
+            'sandbox' => 'true',
+            'transaction_id' => $transactionId,
+            'amount' => $amount,
+            'currency' => 'LKR'
+        ]);
+
+        Log::info('Sandbox payment simulation', [
+            'transaction_id' => $transactionId,
+            'payment_url' => $paymentUrl,
+            'amount' => $amount
+        ]);
+
         return [
             'success' => true,
             'data' => [
                 'id' => $transactionId,
+                'payment_url' => $paymentUrl,
                 'status' => 'pending',
                 'amount' => $amount,
-                'currency' => config('genie_business.currency', 'LKR'),
-                'description' => $description,
-                'customer_email' => $customerEmail,
-                'customer_name' => $customerName,
-                'payment_url' => config('app.url') . '/property/ads/' . $adId . '/payment/success?sandbox=true&transaction_id=' . $transactionId,
-                'metadata' => [
-                    'property_id' => $propertyId,
-                    'ad_id' => $adId,
-                    'type' => 'ad_promotion'
-                ],
+                'currency' => 'LKR',
                 'sandbox' => true
             ]
         ];
