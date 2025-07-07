@@ -264,7 +264,7 @@ class PlanPaymentController extends Controller
             'property_id' => $property->id
         ]);
 
-        return redirect()->route('plans.activated')
+        return redirect()->route('plans.index')
                ->with('success', 'Payment completed successfully! Your ' . $payment->plan->name . ' plan has been activated.');
     }
 
@@ -327,7 +327,7 @@ class PlanPaymentController extends Controller
             ]);
         }
 
-        return redirect()->route('plans.activated')
+        return redirect()->route('plans.index')
                ->with('success', 'Payment verified successfully! Your ' . $payment->plan->name . ' plan has been activated.');
     }
 }
