@@ -255,9 +255,14 @@
                             </div>
                         </div>
 
-                        <div class="flex justify-between mt-6">
+                        <div class="flex justify-between items-center mt-6">
                             <button type="button" id="step2Prev" class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50">Back</button>
-                            <button type="button" id="step2Next" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Continue</button>
+                            <div class="flex items-center space-x-3">
+                                <div id="step2ValidationMessage" class="text-sm text-gray-500 hidden">
+                                    Please fill in all required fields
+                                </div>
+                                <button type="button" id="step2Next" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Continue</button>
+                            </div>
                         </div>
                     </div>
 
@@ -439,6 +444,103 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if this is a scam report (passed from backend)
     const isScamReport = @json(isset($isScamReport) && $isScamReport);
 
+    // Step 2 validation function
+    function validateStep2() {
+        let isValid = true;
+        const propertyType = document.querySelector('input[name="property_type"]:checked')?.value;
+
+        // Clear previous error messages
+        document.querySelectorAll('#step2 .text-red-500').forEach(error => {
+            error.classList.add('hidden');
+            error.textContent = '';
+        });
+
+        // Reset field borders
+        document.querySelectorAll('#step2 input, #step2 select').forEach(field => {
+            field.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+            field.classList.add('border-gray-300', 'focus:border-blue-500', 'focus:ring-blue-500');
+        });
+
+        // Validate business name
+        const businessName = document.getElementById('business_name');
+        if (!businessName.value.trim()) {
+            showFieldError(businessName, 'Business name is required');
+            isValid = false;
+        }
+
+        // Validate business email
+        const businessEmail = document.getElementById('business_email');
+        if (!businessEmail.value.trim()) {
+            showFieldError(businessEmail, 'Personal email is required');
+            isValid = false;
+        } else if (!isValidEmail(businessEmail.value)) {
+            showFieldError(businessEmail, 'Please enter a valid email address');
+            isValid = false;
+        }
+
+        // Validate domain (for web businesses)
+        if (propertyType === 'Web') {
+            const domain = document.getElementById('domain');
+            if (!domain.value.trim()) {
+                showFieldError(domain, 'Website domain is required for web businesses');
+                isValid = false;
+            }
+        }
+
+        // Validate city (for physical businesses)
+        if (propertyType === 'Physical') {
+            const city = document.getElementById('city');
+            if (!city.value.trim()) {
+                showFieldError(city, 'City is required for physical businesses');
+                isValid = false;
+            }
+        }
+
+        // Validate country
+        const country = document.getElementById('country');
+        if (!country.value) {
+            showFieldError(country, 'Country is required');
+            isValid = false;
+        }
+
+        // Validate other country field if "Other" is selected
+        if (country.value === 'Other') {
+            const otherCountry = document.getElementById('other_country');
+            if (!otherCountry.value.trim()) {
+                showFieldError(otherCountry, 'Please specify the country');
+                isValid = false;
+            }
+        }
+
+        if (!isValid) {
+            // Scroll to first error
+            const firstError = document.querySelector('#step2 .border-red-500');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        return isValid;
+    }
+
+    // Helper function to show field error
+    function showFieldError(field, message) {
+        field.classList.remove('border-gray-300', 'focus:border-blue-500', 'focus:ring-blue-500');
+        field.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+
+        const errorDiv = field.parentNode.querySelector('.text-red-500');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+    }
+
+    // Helper function to validate email
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
     // Property type handling
     document.querySelectorAll('.property-type-option').forEach(option => {
         option.addEventListener('click', function() {
@@ -483,6 +585,8 @@ document.addEventListener('DOMContentLoaded', function() {
         step1.classList.add('hidden');
         step2.classList.remove('hidden');
         updateStepIndicators(2);
+        // Update button state when entering step 2
+        setTimeout(updateStep2ButtonState, 100);
     });
 
     // Step 2 back to 1
@@ -492,11 +596,13 @@ document.addEventListener('DOMContentLoaded', function() {
         updateStepIndicators(1);
     });
 
-    // Step 2 to 3
+    // Step 2 to 3 (with validation)
     step2Next.addEventListener('click', function() {
-        step2.classList.add('hidden');
-        step3.classList.remove('hidden');
-        updateStepIndicators(3);
+        if (validateStep2()) {
+            step2.classList.add('hidden');
+            step3.classList.remove('hidden');
+            updateStepIndicators(3);
+        }
     });
 
     // Step 3 back to 2
@@ -617,6 +723,114 @@ document.addEventListener('DOMContentLoaded', function() {
             otherField.classList.add('hidden');
         }
     });
+
+    // Real-time validation for Step 2 fields
+    document.getElementById('business_name').addEventListener('input', function() {
+        if (this.value.trim()) {
+            clearFieldError(this);
+        } else {
+            updateStep2ButtonState();
+        }
+    });
+
+    document.getElementById('business_email').addEventListener('input', function() {
+        if (this.value.trim() && isValidEmail(this.value)) {
+            clearFieldError(this);
+        } else {
+            updateStep2ButtonState();
+        }
+    });
+
+    document.getElementById('domain').addEventListener('input', function() {
+        if (this.value.trim()) {
+            clearFieldError(this);
+        } else {
+            updateStep2ButtonState();
+        }
+    });
+
+    document.getElementById('city').addEventListener('input', function() {
+        if (this.value.trim()) {
+            clearFieldError(this);
+        } else {
+            updateStep2ButtonState();
+        }
+    });
+
+    document.getElementById('country').addEventListener('change', function() {
+        if (this.value) {
+            clearFieldError(this);
+        } else {
+            updateStep2ButtonState();
+        }
+    });
+
+    document.getElementById('other_country').addEventListener('input', function() {
+        if (this.value.trim()) {
+            clearFieldError(this);
+        } else {
+            updateStep2ButtonState();
+        }
+    });
+
+    // Helper function to clear field error
+    function clearFieldError(field) {
+        field.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+        field.classList.add('border-gray-300', 'focus:border-blue-500', 'focus:ring-blue-500');
+
+        const errorDiv = field.parentNode.querySelector('.text-red-500');
+        if (errorDiv) {
+            errorDiv.textContent = '';
+            errorDiv.classList.add('hidden');
+        }
+
+        // Check if step 2 is ready and update button
+        updateStep2ButtonState();
+    }
+
+    // Function to update Step 2 button state based on field completion
+    function updateStep2ButtonState() {
+        const propertyType = document.querySelector('input[name="property_type"]:checked')?.value;
+        const businessName = document.getElementById('business_name').value.trim();
+        const businessEmail = document.getElementById('business_email').value.trim();
+        const country = document.getElementById('country').value;
+
+        let allRequiredFilled = businessName && businessEmail && country && isValidEmail(businessEmail);
+
+        // Check property type specific requirements
+        if (propertyType === 'Web') {
+            const domain = document.getElementById('domain').value.trim();
+            allRequiredFilled = allRequiredFilled && domain;
+        } else if (propertyType === 'Physical') {
+            const city = document.getElementById('city').value.trim();
+            allRequiredFilled = allRequiredFilled && city;
+        }
+
+        // Check other country field if applicable
+        if (country === 'Other') {
+            const otherCountry = document.getElementById('other_country').value.trim();
+            allRequiredFilled = allRequiredFilled && otherCountry;
+        }
+
+        const continueBtn = document.getElementById('step2Next');
+        const validationMessage = document.getElementById('step2ValidationMessage');
+
+        if (allRequiredFilled) {
+            continueBtn.classList.remove('bg-blue-400', 'cursor-not-allowed');
+            continueBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            continueBtn.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.3)';
+            if (validationMessage) {
+                validationMessage.classList.add('hidden');
+            }
+        } else {
+            continueBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            continueBtn.classList.add('bg-blue-400');
+            continueBtn.style.boxShadow = 'none';
+            if (validationMessage) {
+                validationMessage.classList.remove('hidden');
+            }
+        }
+    }
 
     // Load subcategories function
     function loadSubcategories() {

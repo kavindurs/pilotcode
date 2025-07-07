@@ -147,7 +147,7 @@
                 </div>
 
                 <!-- Business Owner Button -->
-                <a href="{{ route('register.show') }}" class="inline-flex items-center px-6 py-3 text-base font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors">
+                <a href="/business" class="inline-flex items-center px-6 py-3 text-base font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors">
                     <i class="fas fa-store mr-2"></i>
                     For Business
                 </a>

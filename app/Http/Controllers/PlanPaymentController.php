@@ -221,7 +221,7 @@ class PlanPaymentController extends Controller
                 'business_email' => $paymentData['business_email'],
                 'customer_email' => $paymentData['customer_email'],
                 'customer_name' => $paymentData['customer_name'],
-                'amount' => $paymentData['amount'],
+                'amount' => $paymentData['amount'] * 3, // Multiply amount by 3 before storing
                 'currency' => $paymentData['currency'],
                 'status' => 'completed', // Set as completed immediately
                 'order_id' => $paymentData['order_id'],
@@ -237,7 +237,7 @@ class PlanPaymentController extends Controller
             'payment_id' => $payment->id,
             'property_id' => $property->id,
             'plan_id' => $paymentData['plan_id'],
-            'amount' => $paymentData['amount'],
+            'amount' => $paymentData['amount'] * 3, // Log the actual stored amount (multiplied by 3)
             'was_existing' => $payment->wasRecentlyCreated ? false : true
         ]);
 
