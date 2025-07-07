@@ -93,53 +93,66 @@ class PlanPaymentController extends Controller
         // For Genie payment gateway, use LKR amount
         $paymentAmount = $lkrAmount;
 
-        // Create a payment record
-        $payment = Payment::create([
+        // Store payment data in session instead of creating payment record
+        // Payment record will only be created on successful payment
+        $paymentData = [
             'plan_id' => $plan->id,
             'property_id' => $property->id,
             'business_email' => $property->business_email ?: 'noemail@property' . $property->id . '.local',
             'customer_email' => $property->business_email ?: 'noemail@property' . $property->id . '.local',
             'customer_name' => $property->business_name ?: $property->contact_person,
-            'amount' => $paymentAmount*3, // Use LKR amount for payment gateway
+            'amount' => $paymentAmount, // Use LKR amount for payment gateway
             'currency' => 'LKR',
-            'status' => 'pending',
-            'order_id' => 'PLAN_' . $plan->id . '_' . time(),
-            'payment_method' => $validated['payment_method']
+            'payment_method' => $validated['payment_method'],
+            'order_id' => 'PLAN_' . $plan->id . '_' . time()
+        ];
+
+        // Store in session for later use in success callback
+        session(['pending_plan_payment' => $paymentData]);
+
+        Log::info('Plan Payment Data Stored in Session', [
+            'property_id' => $property->id,
+            'plan_id' => $plan->id,
+            'amount' => $paymentAmount,
+            'order_id' => $paymentData['order_id']
         ]);
 
         // Initialize payment service (same as Ad Manager)
         $paymentService = new GenieBusinessPaymentService();
 
         // Create payment request using the same service as Ad Manager
+        // Use a temporary ID for payment gateway tracking
+        $tempPaymentId = 'TEMP_' . $property->id . '_' . time();
+
         $paymentResult = $paymentService->createPayment(
             $paymentAmount, // Amount in LKR for payment gateway
             "Subscription to {$plan->name} Plan",
             $property->business_email ?: 'noemail@property' . $property->id . '.local',
             $property->business_name ?: $property->contact_person,
             $property->id,
-            $payment->id, // Use payment ID instead of ad ID
-            route('plans.payment.success', $payment->id)
+            $tempPaymentId, // Use temporary ID instead of payment ID
+            route('plans.payment.success') // Use route without payment ID
         );
 
         Log::info('Plan Payment Service Result', [
-            'payment_id' => $payment->id,
+            'temp_payment_id' => $tempPaymentId,
             'success' => $paymentResult['success'],
             'data' => $paymentResult['data'] ?? null,
             'error' => $paymentResult['error'] ?? null
         ]);
 
         if ($paymentResult['success']) {
-            // Store payment ID and redirect to payment page
-            $payment->update([
-                'transaction_id' => $paymentResult['data']['id'] ?? null,
-                'genie_transaction_id' => $paymentResult['data']['id'] ?? null
-            ]);
+            // Store gateway transaction ID in session for later reference
+            if (isset($paymentResult['data']['id'])) {
+                $paymentData['gateway_transaction_id'] = $paymentResult['data']['id'];
+                session(['pending_plan_payment' => $paymentData]);
+            }
 
             // Redirect to payment gateway (same as Ad Manager)
             if (isset($paymentResult['data']['payment_url'])) {
                 Log::info('Redirecting to payment URL', [
                     'payment_url' => $paymentResult['data']['payment_url'],
-                    'payment_id' => $payment->id
+                    'temp_payment_id' => $tempPaymentId
                 ]);
 
                 return redirect($paymentResult['data']['payment_url']);
@@ -149,12 +162,13 @@ class PlanPaymentController extends Controller
                     ->with('error', 'Payment URL not available. Please try again or contact support.');
             }
         } else {
-            // Payment creation failed, delete the payment record and show error
-            Log::error('Plan payment creation failed, deleting payment', [
-                'payment_id' => $payment->id,
+            // Payment creation failed, clear session and show error
+            Log::error('Plan payment creation failed', [
+                'temp_payment_id' => $tempPaymentId,
                 'error' => $paymentResult['error']
             ]);
-            $payment->delete();
+
+            session()->forget('pending_plan_payment');
 
             return back()->withErrors([
                 'payment' => 'Payment processing failed: ' . $paymentResult['error']
@@ -165,33 +179,89 @@ class PlanPaymentController extends Controller
     /**
      * Handle successful payment
      */
-    public function paymentSuccess(Request $request, Payment $payment)
+    public function paymentSuccess(Request $request)
     {
+        // Get payment data from session
+        $paymentData = session('pending_plan_payment');
+
+        if (!$paymentData) {
+            Log::warning('Payment success callback without session data', [
+                'request_params' => $request->all()
+            ]);
+
+            return redirect()->route('plans.index')
+                   ->with('error', 'Payment session expired. Please contact support if payment was deducted.');
+        }
+
         Log::info('Plan Payment Success Callback', [
-            'payment_id' => $payment->id,
-            'plan_id' => $payment->plan_id,
+            'payment_data' => $paymentData,
             'request_params' => $request->all()
         ]);
 
-        // Update payment status
-        $payment->update([
-            'status' => 'completed',
-            'transaction_id' => $request->get('transaction_id', $payment->order_id),
-            'completed_at' => now()
+        // NOW create/update the payment record (only on success)
+        $property = Property::find($paymentData['property_id']);
+
+        if (!$property) {
+            Log::error('Property not found during payment success', [
+                'property_id' => $paymentData['property_id']
+            ]);
+
+            return redirect()->route('property.login')
+                   ->with('error', 'Property not found. Please login again.');
+        }
+
+        // Check for existing payment record for this property (regardless of plan or status)
+        // Never keep two payment records for the same property
+        $payment = Payment::updateOrCreate(
+            [
+                'property_id' => $property->id
+            ],
+            [
+                'plan_id' => $paymentData['plan_id'],
+                'business_email' => $paymentData['business_email'],
+                'customer_email' => $paymentData['customer_email'],
+                'customer_name' => $paymentData['customer_name'],
+                'amount' => $paymentData['amount'],
+                'currency' => $paymentData['currency'],
+                'status' => 'completed', // Set as completed immediately
+                'order_id' => $paymentData['order_id'],
+                'payment_method' => $paymentData['payment_method'],
+                'transaction_id' => $request->get('transaction_id', $paymentData['gateway_transaction_id'] ?? $paymentData['order_id']),
+                'genie_transaction_id' => $paymentData['gateway_transaction_id'] ?? null,
+                'completed_at' => now(),
+                'updated_at' => now()
+            ]
+        );
+
+        Log::info('Plan Payment Record Created/Updated on Success', [
+            'payment_id' => $payment->id,
+            'property_id' => $property->id,
+            'plan_id' => $paymentData['plan_id'],
+            'amount' => $paymentData['amount'],
+            'was_existing' => $payment->wasRecentlyCreated ? false : true
         ]);
 
-        // Update property's plan
-        $property = $payment->property;
-        if ($property) {
+        // ONLY NOW update property's plan (after payment is confirmed successful)
+        if ($property && $payment->status === 'completed') {
             $property->update([
                 'plan_id' => $payment->plan_id
             ]);
+
+            Log::info('Property plan updated after successful payment', [
+                'property_id' => $property->id,
+                'old_plan_id' => $property->getOriginal('plan_id'),
+                'new_plan_id' => $payment->plan_id,
+                'payment_id' => $payment->id
+            ]);
         }
+
+        // Clear the session data
+        session()->forget('pending_plan_payment');
 
         Log::info('Plan Payment Completed', [
             'payment_id' => $payment->id,
             'plan_id' => $payment->plan_id,
-            'property_id' => $property->id ?? null
+            'property_id' => $property->id
         ]);
 
         return redirect()->route('plans.activated')
@@ -201,17 +271,25 @@ class PlanPaymentController extends Controller
     /**
      * Handle cancelled payment
      */
-    public function paymentCancel(Request $request, Payment $payment)
+    public function paymentCancel(Request $request)
     {
-        Log::info('Plan Payment Cancelled', [
-            'payment_id' => $payment->id,
-            'plan_id' => $payment->plan_id
-        ]);
+        // Get payment data from session
+        $paymentData = session('pending_plan_payment');
 
-        // Update payment status
-        $payment->update([
-            'status' => 'cancelled'
-        ]);
+        if ($paymentData) {
+            Log::info('Plan Payment Cancelled', [
+                'property_id' => $paymentData['property_id'],
+                'plan_id' => $paymentData['plan_id'],
+                'order_id' => $paymentData['order_id']
+            ]);
+
+            // Clear the session data
+            session()->forget('pending_plan_payment');
+        } else {
+            Log::info('Plan Payment Cancel without session data', [
+                'request_params' => $request->all()
+            ]);
+        }
 
         return redirect()->route('plans.index')
                ->with('error', 'Payment was cancelled. Please try again if you want to activate the plan.');

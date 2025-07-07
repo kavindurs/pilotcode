@@ -227,8 +227,8 @@ Route::prefix('property')->group(function () {
     // Plan Payment routes (new payment gateway integration)
     Route::get('/plans/checkout', [\App\Http\Controllers\PlanPaymentController::class, 'checkout'])->name('plans.checkout');
     Route::post('/plans/payment/process', [\App\Http\Controllers\PlanPaymentController::class, 'processPayment'])->name('plans.payment.process');
-    Route::get('/plans/payment/{payment}/success', [\App\Http\Controllers\PlanPaymentController::class, 'paymentSuccess'])->name('plans.payment.success');
-    Route::get('/plans/payment/{payment}/cancel', [\App\Http\Controllers\PlanPaymentController::class, 'paymentCancel'])->name('plans.payment.cancel');
+    Route::get('/plans/payment/success', [\App\Http\Controllers\PlanPaymentController::class, 'paymentSuccess'])->name('plans.payment.success');
+    Route::get('/plans/payment/cancel', [\App\Http\Controllers\PlanPaymentController::class, 'paymentCancel'])->name('plans.payment.cancel');
     Route::post('/plans/payment/{payment}/verify', [\App\Http\Controllers\PlanPaymentController::class, 'verifyPayment'])->name('plans.payment.verify');
 });
 

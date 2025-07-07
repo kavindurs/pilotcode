@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Payment Success Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success-btn {
+            background: #28a745;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .cancel-btn {
+            background: #dc3545;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Manual Payment Success Test</h1>
+
+        <div class="warning">
+            <strong>⚠️ Development Mode Only</strong><br>
+            This page is only needed because you're testing on localhost. In production, the payment gateway automatically calls the success URL.
+        </div>
+
+        <div class="info">
+            <h3>How to test the payment flow:</h3>
+            <ol>
+                <li>Go to the plans page and click "Complete Payment"</li>
+                <li>You'll be redirected to the payment gateway</li>
+                <li>Complete the payment on the gateway</li>
+                <li>After payment, come back to this page</li>
+                <li>Click the "Simulate Payment Success" button below</li>
+            </ol>
+        </div>
+
+        <h3>Test Payment Callbacks:</h3>
+
+        <p>Use these buttons to manually trigger payment callbacks:</p>
+
+        <button class="success-btn" onclick="simulateSuccess()">
+            ✅ Simulate Payment Success
+        </button>
+
+        <button class="cancel-btn" onclick="simulateCancel()">
+            ❌ Simulate Payment Cancel
+        </button>
+
+        <div id="result" style="margin-top: 20px;"></div>
+
+        <div class="info">
+            <h3>What happens when you click "Simulate Payment Success":</h3>
+            <ul>
+                <li>✅ Payment record is created in the database</li>
+                <li>✅ Property plan is updated to the selected plan</li>
+                <li>✅ Session data is cleared</li>
+                <li>✅ You're redirected to the plans activated page</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <h3>Production behavior:</h3>
+            <p>In production, when a user completes payment on the gateway, the gateway automatically calls your success URL, which triggers the same process as clicking "Simulate Payment Success" above.</p>
+        </div>
+    </div>
+
+    <script>
+        function simulateSuccess() {
+            document.getElementById('result').innerHTML = '<p style="color: blue;">Redirecting to payment success...</p>';
+            // Add a random transaction ID for testing
+            const transactionId = 'TEST_' + Date.now();
+            window.location.href = '/property/plans/payment/success?transaction_id=' + transactionId;
+        }
+
+        function simulateCancel() {
+            document.getElementById('result').innerHTML = '<p style="color: red;">Redirecting to payment cancel...</p>';
+            window.location.href = '/property/plans/payment/cancel';
+        }
+    </script>
+</body>
+</html>
