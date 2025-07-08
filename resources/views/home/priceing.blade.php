@@ -37,9 +37,14 @@
             </div>
             <h3 class="text-xl font-semibold text-gray-900 mb-2">Location Access Required</h3>
             <p class="text-gray-600 mb-6">We need access to your location to show you the most relevant pricing plans available in your area.</p>
-            <button id="allowLocationBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
-                Allow Location Access
-            </button>
+            <div class="space-y-3">
+                <button id="allowLocationBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+                    Allow Location Access
+                </button>
+                <button id="skipLocationBtn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
+                    Skip & View All Plans
+                </button>
+            </div>
         </div>
 
         <div id="locationError" class="hidden">
@@ -49,10 +54,15 @@
                 </svg>
             </div>
             <h3 class="text-xl font-semibold text-red-600 mb-2">Location Access Denied</h3>
-            <p class="text-gray-600 mb-6">Location access is required to view our pricing plans. Please enable location access in your browser settings and refresh the page.</p>
-            <button onclick="window.location.reload()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
-                Refresh Page
-            </button>
+            <p class="text-gray-600 mb-6">Location access is required to view location-specific pricing. You can still view all available plans below.</p>
+            <div class="space-y-3">
+                <button onclick="window.location.reload()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+                    Try Again
+                </button>
+                <button id="skipLocationErrorBtn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
+                    View All Plans
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -355,6 +365,8 @@
     const locationError = document.getElementById('locationError');
     const pricingContent = document.getElementById('pricingContent');
     const allowLocationBtn = document.getElementById('allowLocationBtn');
+    const skipLocationBtn = document.getElementById('skipLocationBtn');
+    const skipLocationErrorBtn = document.getElementById('skipLocationErrorBtn');
     const userLocationDisplay = document.getElementById('userLocationDisplay');
 
     // Function to filter comparison table columns
@@ -398,6 +410,13 @@
 
         showLocationLoading();
 
+        // Use longer timeout and more lenient options for mobile browsers
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 15000, // Increased timeout for mobile
+            maximumAge: 300000 // 5 minutes
+        };
+
         navigator.geolocation.getCurrentPosition(function(position) {
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
@@ -440,21 +459,52 @@
                 });
         }, function(error) {
             console.error('Geolocation error:', error);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+
+            // Handle different error types
+            if (error.code === error.PERMISSION_DENIED) {
+                console.error('User denied the request for Geolocation.');
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+                console.error('Location information is unavailable.');
+            } else if (error.code === error.TIMEOUT) {
+                console.error('The request to get user location timed out.');
+            }
+
             showLocationError();
-        }, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 300000 // 5 minutes
-        });
+        }, options);
     }
 
     // Event listener for allow location button
     allowLocationBtn.addEventListener('click', requestLocation);
 
+    // Event listeners for skip location buttons
+    skipLocationBtn.addEventListener('click', function() {
+        // Show all plans (default to other plans)
+        filterComparisonColumns(otherPlans);
+        showPricingContent('Location skipped - Showing all plans');
+    });
+
+    skipLocationErrorBtn.addEventListener('click', function() {
+        // Show all plans (default to other plans)
+        filterComparisonColumns(otherPlans);
+        showPricingContent('Location unavailable - Showing all plans');
+    });
+
     // Auto-request location on page load if previously granted
     document.addEventListener('DOMContentLoaded', function() {
+        // Check if we're on HTTPS or localhost (required for geolocation on mobile)
+        const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+        if (!isSecure) {
+            console.warn('Geolocation requires HTTPS on mobile browsers');
+            // Show modal for manual location permission
+            locationModal.style.display = 'flex';
+            return;
+        }
+
         // Check if geolocation permission was previously granted
-        if (navigator.permissions) {
+        if (navigator.permissions && navigator.permissions.query) {
             navigator.permissions.query({name: 'geolocation'}).then(function(result) {
                 if (result.state === 'granted') {
                     requestLocation();
@@ -462,9 +512,14 @@
                     // Show modal to request permission
                     locationModal.style.display = 'flex';
                 }
+            }).catch(function(error) {
+                console.log('Permissions API not fully supported:', error);
+                // Fallback: always show modal for user interaction
+                locationModal.style.display = 'flex';
             });
         } else {
-            // Fallback for browsers that don't support permissions API
+            // Fallback for browsers that don't support permissions API (common on mobile)
+            console.log('Permissions API not supported, showing location request modal');
             locationModal.style.display = 'flex';
         }
     });
