@@ -363,6 +363,18 @@
     const sriLankaPlans = ['1', '5', '6', '7'];
     const otherPlans = ['1', '2', '3', '4'];
 
+    // Function to get actual plan IDs from the DOM
+    function getActualPlanIds() {
+        const planIds = [];
+        document.querySelectorAll('.comparison-col[data-plan-id]').forEach(function(col) {
+            const planId = col.getAttribute('data-plan-id');
+            if (planId && !planIds.includes(planId)) {
+                planIds.push(planId);
+            }
+        });
+        return planIds;
+    }
+
     // DOM elements
     const locationModal = document.getElementById('locationModal');
     const locationLoading = document.getElementById('locationLoading');
@@ -377,10 +389,20 @@
 
     // Function to filter comparison table columns
     function filterComparisonColumns(allowedIds) {
-        document.querySelectorAll('.comparison-col').forEach(function(col) {
+        console.log('Filtering with allowed IDs:', allowedIds);
+        const allColumns = document.querySelectorAll('.comparison-col');
+        console.log('Total columns found:', allColumns.length);
+
+        allColumns.forEach(function(col) {
             const planId = col.getAttribute('data-plan-id');
+            console.log('Processing column with plan ID:', planId);
+
             if (planId && !allowedIds.includes(planId)) {
+                console.log('Hiding column with plan ID:', planId);
                 col.style.display = 'none';
+            } else {
+                console.log('Showing column with plan ID:', planId);
+                col.style.display = '';
             }
         });
     }
@@ -542,29 +564,53 @@
                                     const country = data.address.country;
                                     console.log("Detected country:", country);
 
+                                    // Get actual plan IDs from DOM
+                                    const actualPlanIds = getActualPlanIds();
+                                    console.log('Actual plan IDs in DOM:', actualPlanIds);
+
+                                    // Debug: Log available plan elements
+                                    const allPlanElements = document.querySelectorAll('.comparison-col[data-plan-id]');
+                                    console.log('Available plan elements:', allPlanElements.length);
+                                    allPlanElements.forEach(el => {
+                                        console.log('Plan ID found:', el.getAttribute('data-plan-id'));
+                                    });
+
+                                    let plansToShow = otherPlans;
                                     if (country === "Sri Lanka" || country === "ශ්‍රී ලංකාව") {
-                                        filterComparisonColumns(sriLankaPlans);
+                                        console.log('Sri Lanka detected, checking available plans...');
+                                        // Check if Sri Lanka plans exist, otherwise show all
+                                        const sriLankaExists = sriLankaPlans.some(id => actualPlanIds.includes(id));
+                                        plansToShow = sriLankaExists ? sriLankaPlans : actualPlanIds;
+                                        console.log('Plans to show for Sri Lanka:', plansToShow);
                                     } else {
-                                        filterComparisonColumns(otherPlans);
+                                        // Check if other plans exist, otherwise show all
+                                        const otherExists = otherPlans.some(id => actualPlanIds.includes(id));
+                                        plansToShow = otherExists ? otherPlans : actualPlanIds;
+                                        console.log('Plans to show for other countries:', plansToShow);
                                     }
 
+                                    filterComparisonColumns(plansToShow);
                                     showPricingContent(`${data.address.city || 'Location'}, ${country}`);
                                 } else {
-                                    console.log('Country detection failed, showing all plans');
-                                    filterComparisonColumns(otherPlans);
+                                    console.log('Country detection failed, showing all available plans');
+                                    const actualPlanIds = getActualPlanIds();
+                                    filterComparisonColumns(actualPlanIds);
                                     showPricingContent('Location detected - Showing all plans');
                                 }
                             })
                             .catch(error => {
-                                console.log('Geocoding error, showing all plans');
-                                filterComparisonColumns(otherPlans);
+                                console.log('Geocoding error, showing all available plans');
+                                const actualPlanIds = getActualPlanIds();
+                                filterComparisonColumns(actualPlanIds);
                                 showPricingContent('Location detected - Showing all plans');
                             });
                     },
                     function(error) {
                         console.log('Mobile geolocation failed:', error.message);
-                        // Show all plans immediately without modal
-                        filterComparisonColumns(otherPlans);
+                        // Show all available plans immediately without modal
+                        const actualPlanIds = getActualPlanIds();
+                        console.log('Showing all available plans due to geolocation error:', actualPlanIds);
+                        filterComparisonColumns(actualPlanIds);
                         showPricingContent('Location unavailable - Showing all plans');
                     },
                     {
@@ -575,7 +621,8 @@
                 );
             } else {
                 console.log('Geolocation not supported on mobile');
-                filterComparisonColumns(otherPlans);
+                const actualPlanIds = getActualPlanIds();
+                filterComparisonColumns(actualPlanIds);
                 showPricingContent('Location not supported - Showing all plans');
             }
             return; // Skip the rest of the logic for mobile
