@@ -19,65 +19,12 @@
     }
 </style>
 
-<!-- Location Access Required Modal -->
-<div id="locationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
-        <div id="locationLoading" class="hidden">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">Requesting Location Access</h3>
-            <p class="text-gray-600">Please allow location access to view location-based pricing plans.</p>
-        </div>
-
-        <div id="locationRequest">
-            <div class="mb-4">
-                <svg class="w-16 h-16 text-blue-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-            </div>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">Location Access Required</h3>
-            <p id="locationRequestText" class="text-gray-600 mb-4">We need access to your location to show you the most relevant pricing plans available in your area.</p>
-            <div id="mobileNotice" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                <p class="text-amber-700 text-sm">
-                    <strong>Mobile users:</strong> Location access requires HTTPS. Since you're on HTTP, you can skip location and view all available plans.
-                </p>
-            </div>
-            <div class="space-y-3">
-                <button id="allowLocationBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
-                    Allow Location Access
-                </button>
-                <button id="skipLocationBtn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
-                    Skip & View All Plans
-                </button>
-            </div>
-        </div>
-
-        <div id="locationError" class="hidden">
-            <div class="mb-4">
-                <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-            </div>
-            <h3 class="text-xl font-semibold text-red-600 mb-2">Location Access Denied</h3>
-            <p class="text-gray-600 mb-6">Location access is required to view location-specific pricing. You can still view all available plans below.</p>
-            <div class="space-y-3">
-                <button onclick="window.location.reload()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
-                    Try Again
-                </button>
-                <button id="skipLocationErrorBtn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
-                    View All Plans
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<section id="pricingContent" class="py-10 bg-white sm:py-16 lg:py-24" style="display: none;">
+<section id="pricingContent" class="py-10 bg-white sm:py-16 lg:py-24">
     <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div class="max-w-xl mx-auto text-center">
             <h2 class="text-4xl font-bold text-black lg:text-5xl sm:text-5xl">Pricing &amp; Plans</h2>
             <p class="mt-4 text-lg leading-relaxed text-gray-600">Choose the perfect plan to elevate your business presence and customer engagement.</p>
-            <div id="locationInfo" class="mt-4 p-3 bg-blue-50 rounded-lg" style="display: none;">
+            <div id="locationInfo" class="mt-4 p-3 bg-blue-50 rounded-lg">
                 <p class="text-sm text-blue-700">
                     <span class="font-medium">📍 Location:</span> <span id="userLocationDisplay">Detecting...</span>
                 </p>
@@ -363,30 +310,6 @@
     const sriLankaPlans = ['1', '5', '6', '7'];
     const otherPlans = ['1', '2', '3', '4'];
 
-    // Function to get actual plan IDs from the DOM
-    function getActualPlanIds() {
-        const planIds = [];
-        document.querySelectorAll('.comparison-col[data-plan-id]').forEach(function(col) {
-            const planId = col.getAttribute('data-plan-id');
-            if (planId && !planIds.includes(planId)) {
-                planIds.push(planId);
-            }
-        });
-        return planIds;
-    }
-
-    // DOM elements
-    const locationModal = document.getElementById('locationModal');
-    const locationLoading = document.getElementById('locationLoading');
-    const locationRequest = document.getElementById('locationRequest');
-    const locationError = document.getElementById('locationError');
-    const pricingContent = document.getElementById('pricingContent');
-    const allowLocationBtn = document.getElementById('allowLocationBtn');
-    const skipLocationBtn = document.getElementById('skipLocationBtn');
-    const skipLocationErrorBtn = document.getElementById('skipLocationErrorBtn');
-    const userLocationDisplay = document.getElementById('userLocationDisplay');
-    const mobileNotice = document.getElementById('mobileNotice');
-
     // Function to filter comparison table columns
     function filterComparisonColumns(allowedIds) {
         console.log('Filtering with allowed IDs:', allowedIds);
@@ -407,264 +330,99 @@
         });
     }
 
-    // Function to show location loading
-    function showLocationLoading() {
-        locationRequest.classList.add('hidden');
-        locationError.classList.add('hidden');
-        locationLoading.classList.remove('hidden');
+    // Function to update location display
+    function updateLocationDisplay(locationText) {
+        const userLocationDisplay = document.getElementById('userLocationDisplay');
+        if (userLocationDisplay) {
+            userLocationDisplay.textContent = locationText;
+        }
     }
 
-    // Function to show location error
-    function showLocationError() {
-        locationLoading.classList.add('hidden');
-        locationRequest.classList.add('hidden');
-        locationError.classList.remove('hidden');
-    }
-
-    // Function to hide modal and show content
-    function showPricingContent(locationText = 'Location detected') {
-        locationModal.style.display = 'none';
-        pricingContent.style.display = 'block';
-        userLocationDisplay.textContent = locationText;
-    }
-
-    // Function to request location
+    // Function to request location using default browser geolocation
     function requestLocation() {
-        // Detect if user is on mobile
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-
         if (!navigator.geolocation) {
             console.error("Geolocation is not supported by this browser.");
-            showLocationError();
-            return;
-        }
-
-        // Additional check for mobile on HTTP
-        if (isMobile && !isSecure) {
-            console.error("Mobile browsers require HTTPS for geolocation.");
-            // Skip directly to showing all plans
             filterComparisonColumns(otherPlans);
-            showPricingContent('Mobile device - Location not available on HTTP');
+            updateLocationDisplay('Geolocation not supported - Showing available plans');
             return;
         }
 
-        showLocationLoading();
+        console.log('Requesting geolocation...');
+        updateLocationDisplay('Detecting location...');
 
-        // Use longer timeout and more lenient options for mobile browsers
-        const options = {
-            enableHighAccuracy: true,
-            timeout: 15000, // Increased timeout for mobile
-            maximumAge: 300000 // 5 minutes
-        };
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                console.log('Geolocation success');
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
 
-        navigator.geolocation.getCurrentPosition(function(position) {
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-            const altitude = position.coords.altitude;
+                // Log coordinates for debugging
+                console.log(`Coordinates: ${latitude}, ${longitude}`);
 
-            // Log coordinates and altitude for debugging
-            document.getElementById('user-coordinates').innerText = `Latitude: ${latitude}, Longitude: ${longitude}`;
-            document.getElementById('user-altitude').innerText = altitude !== null ? `Altitude: ${altitude} meters` : "Altitude not available";
+                // Reverse geocode using Nominatim
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.address && data.address.country) {
+                            const country = data.address.country;
+                            const city = data.address.city || data.address.town || data.address.village || '';
+                            const displayLocation = city ? `${city}, ${country}` : country;
 
-            // Reverse geocode using Nominatim
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.address && data.address.country) {
-                        const country = data.address.country;
-                        const city = data.address.city || data.address.town || data.address.village || '';
-                        const displayLocation = city ? `${city}, ${country}` : country;
+                            console.log("Detected country:", country);
 
-                        document.getElementById('user-country').innerText = country;
-                        console.log("Country:", country);
+                            // Filter plans based on country
+                            if (country === "Sri Lanka" || country === "ශ්‍රී ලංකාව") {
+                                console.log('Sri Lanka detected, showing Sri Lanka plans');
+                                filterComparisonColumns(sriLankaPlans);
+                            } else {
+                                console.log('Other country detected, showing other plans');
+                                filterComparisonColumns(otherPlans);
+                            }
 
-                        // Filter plans based on country
-                        if (country === "Sri Lanka" || country === "ශ්‍රී ලංකාව") {
-                            filterComparisonColumns(sriLankaPlans);
+                            updateLocationDisplay(displayLocation);
                         } else {
+                            console.log('Country detection failed, showing other plans');
                             filterComparisonColumns(otherPlans);
+                            updateLocationDisplay('Location detected - Showing available plans');
                         }
-
-                        // Show pricing content
-                        showPricingContent(displayLocation);
-                    } else {
+                    })
+                    .catch(error => {
+                        console.error('Reverse geocoding error:', error);
                         filterComparisonColumns(otherPlans);
-                        showPricingContent('Location detected');
-                    }
-                })
-                .catch(error => {
-                    console.error('Reverse geocoding error:', error);
-                    filterComparisonColumns(otherPlans);
-                    showPricingContent('Location detected');
-                });
-        }, function(error) {
-            console.error('Geolocation error:', error);
-            console.error('Error code:', error.code);
-            console.error('Error message:', error.message);
+                        updateLocationDisplay('Location detected - Showing available plans');
+                    });
+            },
+            function(error) {
+                console.error('Geolocation error:', error);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
 
-            // Handle different error types
-            if (error.code === error.PERMISSION_DENIED) {
-                console.error('User denied the request for Geolocation.');
-            } else if (error.code === error.POSITION_UNAVAILABLE) {
-                console.error('Location information is unavailable.');
-            } else if (error.code === error.TIMEOUT) {
-                console.error('The request to get user location timed out.');
+                // Show otherPlans when location access is denied or unavailable
+                console.log('Showing otherPlans due to geolocation error');
+                filterComparisonColumns(otherPlans);
+
+                if (error.code === error.PERMISSION_DENIED) {
+                    updateLocationDisplay('Location access denied - Showing available plans');
+                } else if (error.code === error.POSITION_UNAVAILABLE) {
+                    updateLocationDisplay('Location unavailable - Showing available plans');
+                } else if (error.code === error.TIMEOUT) {
+                    updateLocationDisplay('Location timeout - Showing available plans');
+                } else {
+                    updateLocationDisplay('Location error - Showing available plans');
+                }
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000, // 10 seconds timeout
+                maximumAge: 300000 // 5 minutes cache
             }
-
-            // Show otherPlans when location access is denied or unavailable
-            console.log('Showing otherPlans due to geolocation error');
-            filterComparisonColumns(otherPlans);
-            showPricingContent('Location unavailable - Showing available plans');
-        }, options);
+        );
     }
 
-    // Event listener for allow location button
-    allowLocationBtn.addEventListener('click', requestLocation);
-
-    // Event listeners for skip location buttons
-    skipLocationBtn.addEventListener('click', function() {
-        // Show all available plans when user skips location
-        const actualPlanIds = getActualPlanIds();
-        console.log('User skipped location, showing all available plans:', actualPlanIds);
-        filterComparisonColumns(actualPlanIds);
-        showPricingContent('Location skipped - Showing all plans');
-    });
-
-    skipLocationErrorBtn.addEventListener('click', function() {
-        // Show otherPlans when location access is denied/failed
-        console.log('Location access denied/failed, showing otherPlans:', otherPlans);
-        filterComparisonColumns(otherPlans);
-        showPricingContent('Location unavailable - Showing available plans');
-    });    // Auto-request location on page load if previously granted
+    // Auto-request location on page load
     document.addEventListener('DOMContentLoaded', function() {
-        // Detect if user is on mobile
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-        // Check if we're on HTTPS or localhost (required for geolocation on mobile)
-        const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-
-        console.log('Device type:', isMobile ? 'Mobile' : 'Desktop');
-        console.log('Connection secure:', isSecure);
-        console.log('Protocol:', location.protocol);
-        console.log('Hostname:', location.hostname);
-
-        // For mobile users, try a more direct approach
-        if (isMobile) {
-            console.log('Mobile device detected, attempting direct geolocation...');
-
-            // Try geolocation with a shorter timeout for mobile
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        console.log('Mobile geolocation success');
-                        // Process the location directly
-                        const latitude = position.coords.latitude;
-                        const longitude = position.coords.longitude;
-
-                        // Simple country detection or fallback
-                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data && data.address && data.address.country) {
-                                    const country = data.address.country;
-                                    console.log("Detected country:", country);
-
-                                    // Get actual plan IDs from DOM
-                                    const actualPlanIds = getActualPlanIds();
-                                    console.log('Actual plan IDs in DOM:', actualPlanIds);
-
-                                    // Debug: Log available plan elements
-                                    const allPlanElements = document.querySelectorAll('.comparison-col[data-plan-id]');
-                                    console.log('Available plan elements:', allPlanElements.length);
-                                    allPlanElements.forEach(el => {
-                                        console.log('Plan ID found:', el.getAttribute('data-plan-id'));
-                                    });
-
-                                    let plansToShow = otherPlans;
-                                    if (country === "Sri Lanka" || country === "ශ්‍රී ලංකාව") {
-                                        console.log('Sri Lanka detected, checking available plans...');
-                                        // Check if Sri Lanka plans exist, otherwise show all
-                                        const sriLankaExists = sriLankaPlans.some(id => actualPlanIds.includes(id));
-                                        plansToShow = sriLankaExists ? sriLankaPlans : actualPlanIds;
-                                        console.log('Plans to show for Sri Lanka:', plansToShow);
-                                    } else {
-                                        // Check if other plans exist, otherwise show all
-                                        const otherExists = otherPlans.some(id => actualPlanIds.includes(id));
-                                        plansToShow = otherExists ? otherPlans : actualPlanIds;
-                                        console.log('Plans to show for other countries:', plansToShow);
-                                    }
-
-                                    filterComparisonColumns(plansToShow);
-                                    showPricingContent(`${data.address.city || 'Location'}, ${country}`);
-                                } else {
-                                    console.log('Country detection failed, showing otherPlans');
-                                    filterComparisonColumns(otherPlans);
-                                    showPricingContent('Location detected - Showing available plans');
-                                }
-                            })
-                            .catch(error => {
-                                console.log('Geocoding error, showing otherPlans');
-                                filterComparisonColumns(otherPlans);
-                                showPricingContent('Location detected - Showing available plans');
-                            });
-                    },
-                    function(error) {
-                        console.log('Mobile geolocation failed:', error.message);
-                        // Show otherPlans when location access is denied/failed on mobile
-                        console.log('Showing otherPlans due to mobile geolocation error:', otherPlans);
-                        filterComparisonColumns(otherPlans);
-                        showPricingContent('Location unavailable - Showing available plans');
-                    },
-                    {
-                        enableHighAccuracy: false, // Less accurate but faster on mobile
-                        timeout: 8000, // Shorter timeout for mobile
-                        maximumAge: 600000 // 10 minutes cache
-                    }
-                );
-            } else {
-                console.log('Geolocation not supported on mobile');
-                filterComparisonColumns(otherPlans);
-                showPricingContent('Location not supported - Showing available plans');
-            }
-            return; // Skip the rest of the logic for mobile
-        }
-
-        // Desktop logic (original)
-        if (!isSecure) {
-            console.warn('Geolocation requires HTTPS on mobile browsers');
-            locationModal.style.display = 'flex';
-            if (isMobile) {
-                mobileNotice.classList.remove('hidden');
-            }
-            return;
-        }
-
-        // Check if geolocation permission was previously granted (Desktop)
-        if (navigator.permissions && navigator.permissions.query) {
-            navigator.permissions.query({name: 'geolocation'}).then(function(result) {
-                if (result.state === 'granted') {
-                    requestLocation();
-                } else {
-                    locationModal.style.display = 'flex';
-                    if (isMobile && !isSecure) {
-                        mobileNotice.classList.remove('hidden');
-                    }
-                }
-            }).catch(function(error) {
-                console.log('Permissions API not fully supported:', error);
-                locationModal.style.display = 'flex';
-                if (isMobile && !isSecure) {
-                    mobileNotice.classList.remove('hidden');
-                }
-            });
-        } else {
-            console.log('Permissions API not supported, showing location request modal');
-            locationModal.style.display = 'flex';
-            if (isMobile && !isSecure) {
-                mobileNotice.classList.remove('hidden');
-            }
-        }
+        console.log('Page loaded, requesting location...');
+        requestLocation();
     });
 </script>
 
