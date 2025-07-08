@@ -512,7 +512,10 @@
                 console.error('The request to get user location timed out.');
             }
 
-            showLocationError();
+            // Show otherPlans when location access is denied or unavailable
+            console.log('Showing otherPlans due to geolocation error');
+            filterComparisonColumns(otherPlans);
+            showPricingContent('Location unavailable - Showing available plans');
         }, options);
     }
 
@@ -521,15 +524,18 @@
 
     // Event listeners for skip location buttons
     skipLocationBtn.addEventListener('click', function() {
-        // Show all plans (default to other plans)
-        filterComparisonColumns(otherPlans);
+        // Show all available plans when user skips location
+        const actualPlanIds = getActualPlanIds();
+        console.log('User skipped location, showing all available plans:', actualPlanIds);
+        filterComparisonColumns(actualPlanIds);
         showPricingContent('Location skipped - Showing all plans');
     });
 
     skipLocationErrorBtn.addEventListener('click', function() {
-        // Show all plans (default to other plans)
+        // Show otherPlans when location access is denied/failed
+        console.log('Location access denied/failed, showing otherPlans:', otherPlans);
         filterComparisonColumns(otherPlans);
-        showPricingContent('Location unavailable - Showing all plans');
+        showPricingContent('Location unavailable - Showing available plans');
     });    // Auto-request location on page load if previously granted
     document.addEventListener('DOMContentLoaded', function() {
         // Detect if user is on mobile
@@ -592,26 +598,23 @@
                                     filterComparisonColumns(plansToShow);
                                     showPricingContent(`${data.address.city || 'Location'}, ${country}`);
                                 } else {
-                                    console.log('Country detection failed, showing all available plans');
-                                    const actualPlanIds = getActualPlanIds();
-                                    filterComparisonColumns(actualPlanIds);
-                                    showPricingContent('Location detected - Showing all plans');
+                                    console.log('Country detection failed, showing otherPlans');
+                                    filterComparisonColumns(otherPlans);
+                                    showPricingContent('Location detected - Showing available plans');
                                 }
                             })
                             .catch(error => {
-                                console.log('Geocoding error, showing all available plans');
-                                const actualPlanIds = getActualPlanIds();
-                                filterComparisonColumns(actualPlanIds);
-                                showPricingContent('Location detected - Showing all plans');
+                                console.log('Geocoding error, showing otherPlans');
+                                filterComparisonColumns(otherPlans);
+                                showPricingContent('Location detected - Showing available plans');
                             });
                     },
                     function(error) {
                         console.log('Mobile geolocation failed:', error.message);
-                        // Show all available plans immediately without modal
-                        const actualPlanIds = getActualPlanIds();
-                        console.log('Showing all available plans due to geolocation error:', actualPlanIds);
-                        filterComparisonColumns(actualPlanIds);
-                        showPricingContent('Location unavailable - Showing all plans');
+                        // Show otherPlans when location access is denied/failed on mobile
+                        console.log('Showing otherPlans due to mobile geolocation error:', otherPlans);
+                        filterComparisonColumns(otherPlans);
+                        showPricingContent('Location unavailable - Showing available plans');
                     },
                     {
                         enableHighAccuracy: false, // Less accurate but faster on mobile
@@ -621,9 +624,8 @@
                 );
             } else {
                 console.log('Geolocation not supported on mobile');
-                const actualPlanIds = getActualPlanIds();
-                filterComparisonColumns(actualPlanIds);
-                showPricingContent('Location not supported - Showing all plans');
+                filterComparisonColumns(otherPlans);
+                showPricingContent('Location not supported - Showing available plans');
             }
             return; // Skip the rest of the logic for mobile
         }
