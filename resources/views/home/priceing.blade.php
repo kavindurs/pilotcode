@@ -508,9 +508,7 @@
         // Show all plans (default to other plans)
         filterComparisonColumns(otherPlans);
         showPricingContent('Location unavailable - Showing all plans');
-    });
-
-    // Auto-request location on page load if previously granted
+    });    // Auto-request location on page load if previously granted
     document.addEventListener('DOMContentLoaded', function() {
         // Detect if user is on mobile
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -518,57 +516,102 @@
         // Check if we're on HTTPS or localhost (required for geolocation on mobile)
         const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
-        // On mobile with HTTP, geolocation will definitely fail
-        if (isMobile && !isSecure) {
-            console.warn('Mobile browsers require HTTPS for geolocation. Skipping location request.');
-            // Skip directly to showing all plans for mobile on HTTP
-            filterComparisonColumns(otherPlans);
-            showPricingContent('Mobile device detected - Showing all plans');
-            return;
+        console.log('Device type:', isMobile ? 'Mobile' : 'Desktop');
+        console.log('Connection secure:', isSecure);
+        console.log('Protocol:', location.protocol);
+        console.log('Hostname:', location.hostname);
+
+        // For mobile users, try a more direct approach
+        if (isMobile) {
+            console.log('Mobile device detected, attempting direct geolocation...');
+
+            // Try geolocation with a shorter timeout for mobile
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        console.log('Mobile geolocation success');
+                        // Process the location directly
+                        const latitude = position.coords.latitude;
+                        const longitude = position.coords.longitude;
+
+                        // Simple country detection or fallback
+                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data && data.address && data.address.country) {
+                                    const country = data.address.country;
+                                    console.log("Detected country:", country);
+
+                                    if (country === "Sri Lanka" || country === "ශ්‍රී ලංකාව") {
+                                        filterComparisonColumns(sriLankaPlans);
+                                    } else {
+                                        filterComparisonColumns(otherPlans);
+                                    }
+
+                                    showPricingContent(`${data.address.city || 'Location'}, ${country}`);
+                                } else {
+                                    console.log('Country detection failed, showing all plans');
+                                    filterComparisonColumns(otherPlans);
+                                    showPricingContent('Location detected - Showing all plans');
+                                }
+                            })
+                            .catch(error => {
+                                console.log('Geocoding error, showing all plans');
+                                filterComparisonColumns(otherPlans);
+                                showPricingContent('Location detected - Showing all plans');
+                            });
+                    },
+                    function(error) {
+                        console.log('Mobile geolocation failed:', error.message);
+                        // Show all plans immediately without modal
+                        filterComparisonColumns(otherPlans);
+                        showPricingContent('Location unavailable - Showing all plans');
+                    },
+                    {
+                        enableHighAccuracy: false, // Less accurate but faster on mobile
+                        timeout: 8000, // Shorter timeout for mobile
+                        maximumAge: 600000 // 10 minutes cache
+                    }
+                );
+            } else {
+                console.log('Geolocation not supported on mobile');
+                filterComparisonColumns(otherPlans);
+                showPricingContent('Location not supported - Showing all plans');
+            }
+            return; // Skip the rest of the logic for mobile
         }
 
+        // Desktop logic (original)
         if (!isSecure) {
             console.warn('Geolocation requires HTTPS on mobile browsers');
-            // Show modal for manual location permission on desktop
             locationModal.style.display = 'flex';
-
-            // Show mobile notice if on mobile device
             if (isMobile) {
                 mobileNotice.classList.remove('hidden');
             }
             return;
         }
 
-        // Check if geolocation permission was previously granted
+        // Check if geolocation permission was previously granted (Desktop)
         if (navigator.permissions && navigator.permissions.query) {
             navigator.permissions.query({name: 'geolocation'}).then(function(result) {
                 if (result.state === 'granted') {
                     requestLocation();
                 } else {
-                    // Show modal to request permission
                     locationModal.style.display = 'flex';
-
-                    // Show mobile notice if on mobile device and not secure
                     if (isMobile && !isSecure) {
                         mobileNotice.classList.remove('hidden');
                     }
                 }
             }).catch(function(error) {
                 console.log('Permissions API not fully supported:', error);
-                // Fallback: always show modal for user interaction
                 locationModal.style.display = 'flex';
-
-                // Show mobile notice if on mobile device and not secure
                 if (isMobile && !isSecure) {
                     mobileNotice.classList.remove('hidden');
                 }
             });
         } else {
-            // Fallback for browsers that don't support permissions API (common on mobile)
             console.log('Permissions API not supported, showing location request modal');
             locationModal.style.display = 'flex';
-
-            // Show mobile notice if on mobile device and not secure
             if (isMobile && !isSecure) {
                 mobileNotice.classList.remove('hidden');
             }
