@@ -36,7 +36,12 @@
                 </svg>
             </div>
             <h3 class="text-xl font-semibold text-gray-900 mb-2">Location Access Required</h3>
-            <p class="text-gray-600 mb-6">We need access to your location to show you the most relevant pricing plans available in your area.</p>
+            <p id="locationRequestText" class="text-gray-600 mb-4">We need access to your location to show you the most relevant pricing plans available in your area.</p>
+            <div id="mobileNotice" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                <p class="text-amber-700 text-sm">
+                    <strong>Mobile users:</strong> Location access requires HTTPS. Since you're on HTTP, you can skip location and view all available plans.
+                </p>
+            </div>
             <div class="space-y-3">
                 <button id="allowLocationBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
                     Allow Location Access
@@ -368,6 +373,7 @@
     const skipLocationBtn = document.getElementById('skipLocationBtn');
     const skipLocationErrorBtn = document.getElementById('skipLocationErrorBtn');
     const userLocationDisplay = document.getElementById('userLocationDisplay');
+    const mobileNotice = document.getElementById('mobileNotice');
 
     // Function to filter comparison table columns
     function filterComparisonColumns(allowedIds) {
@@ -402,9 +408,22 @@
 
     // Function to request location
     function requestLocation() {
+        // Detect if user is on mobile
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
         if (!navigator.geolocation) {
             console.error("Geolocation is not supported by this browser.");
             showLocationError();
+            return;
+        }
+
+        // Additional check for mobile on HTTP
+        if (isMobile && !isSecure) {
+            console.error("Mobile browsers require HTTPS for geolocation.");
+            // Skip directly to showing all plans
+            filterComparisonColumns(otherPlans);
+            showPricingContent('Mobile device - Location not available on HTTP');
             return;
         }
 
@@ -493,13 +512,30 @@
 
     // Auto-request location on page load if previously granted
     document.addEventListener('DOMContentLoaded', function() {
+        // Detect if user is on mobile
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
         // Check if we're on HTTPS or localhost (required for geolocation on mobile)
         const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
+        // On mobile with HTTP, geolocation will definitely fail
+        if (isMobile && !isSecure) {
+            console.warn('Mobile browsers require HTTPS for geolocation. Skipping location request.');
+            // Skip directly to showing all plans for mobile on HTTP
+            filterComparisonColumns(otherPlans);
+            showPricingContent('Mobile device detected - Showing all plans');
+            return;
+        }
+
         if (!isSecure) {
             console.warn('Geolocation requires HTTPS on mobile browsers');
-            // Show modal for manual location permission
+            // Show modal for manual location permission on desktop
             locationModal.style.display = 'flex';
+
+            // Show mobile notice if on mobile device
+            if (isMobile) {
+                mobileNotice.classList.remove('hidden');
+            }
             return;
         }
 
@@ -511,16 +547,31 @@
                 } else {
                     // Show modal to request permission
                     locationModal.style.display = 'flex';
+
+                    // Show mobile notice if on mobile device and not secure
+                    if (isMobile && !isSecure) {
+                        mobileNotice.classList.remove('hidden');
+                    }
                 }
             }).catch(function(error) {
                 console.log('Permissions API not fully supported:', error);
                 // Fallback: always show modal for user interaction
                 locationModal.style.display = 'flex';
+
+                // Show mobile notice if on mobile device and not secure
+                if (isMobile && !isSecure) {
+                    mobileNotice.classList.remove('hidden');
+                }
             });
         } else {
             // Fallback for browsers that don't support permissions API (common on mobile)
             console.log('Permissions API not supported, showing location request modal');
             locationModal.style.display = 'flex';
+
+            // Show mobile notice if on mobile device and not secure
+            if (isMobile && !isSecure) {
+                mobileNotice.classList.remove('hidden');
+            }
         }
     });
 </script>
