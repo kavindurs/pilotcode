@@ -17,49 +17,6 @@
     #app {
         background-color: #ffffff !important;
     }
-
-    /* Location detection overlay styles */
-    .location-detecting {
-        position: relative;
-    }
-
-    .location-detecting::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(4px);
-        z-index: 10;
-        pointer-events: none;
-    }
-
-    .location-overlay {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 20;
-        text-align: center;
-        pointer-events: none;
-    }
-
-    .spinner {
-        border: 4px solid #f3f4f6;
-        border-top: 4px solid #3b82f6;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 16px;
-    }
-
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
 </style>
 
 <section id="pricingContent" class="py-10 bg-white sm:py-16 lg:py-24">
@@ -85,12 +42,7 @@
         @endphp
 
         <!-- lg+ -->
-        <div id="desktopPlans" class="hidden mt-16 lg:block">
-            <div class="location-overlay hidden">
-                <div class="spinner"></div>
-                <p class="text-gray-600 font-medium">Detecting your location...</p>
-                <p class="text-sm text-gray-500 mt-2">Finding the best plans for your area</p>
-            </div>
+        <div class="hidden mt-16 lg:block">
             <table class="w-full">
                 <thead>
                     <tr>
@@ -253,12 +205,7 @@
     </div>
 
     <!-- xs to lg -->
-    <div id="mobilePlans" class="block mt-12 border-t border-b border-gray-200 divide-y divide-gray-200 lg:hidden">
-        <div class="location-overlay hidden">
-            <div class="spinner"></div>
-            <p class="text-gray-600 font-medium">Detecting your location...</p>
-            <p class="text-sm text-gray-500 mt-2">Finding the best plans for your area</p>
-        </div>
+    <div class="block mt-12 border-t border-b border-gray-200 divide-y divide-gray-200 lg:hidden">
         <div class="grid grid-cols-4 text-center divide-x divide-gray-200">
             @foreach($plans as $index => $plan)
                 <div class="comparison-col px-2 py-2" data-plan-id="{{ $plan->id }}">
@@ -383,29 +330,15 @@
         });
     }
 
-    // Function to show location detection overlay
-    function showLocationDetecting() {
-        const desktopPlans = document.getElementById('desktopPlans');
-        const mobilePlans = document.getElementById('mobilePlans');
-
-        // Add blur class and show overlay
-        desktopPlans.classList.add('location-detecting');
-        mobilePlans.classList.add('location-detecting');
-
-        // Show overlay
-        desktopPlans.querySelector('.location-overlay').classList.remove('hidden');
-        mobilePlans.querySelector('.location-overlay').classList.remove('hidden');
-
-        updateLocationDisplay('Detecting location...');
-    }
-
     // Function to update location display
     function updateLocationDisplay(locationText) {
         const userLocationDisplay = document.getElementById('userLocationDisplay');
         if (userLocationDisplay) {
             userLocationDisplay.textContent = locationText;
         }
-    }    // Function to request location using default browser geolocation
+    }
+
+    // Function to request location using default browser geolocation
     function requestLocation() {
         if (!navigator.geolocation) {
             console.error("Geolocation is not supported by this browser.");
@@ -415,7 +348,7 @@
         }
 
         console.log('Requesting geolocation...');
-        showLocationDetecting();
+        updateLocationDisplay('Detecting location...');
 
         navigator.geolocation.getCurrentPosition(
             function(position) {
@@ -446,19 +379,16 @@
                                 filterComparisonColumns(otherPlans);
                             }
 
-                            hideLocationDetecting();
                             updateLocationDisplay(displayLocation);
                         } else {
                             console.log('Country detection failed, showing other plans');
                             filterComparisonColumns(otherPlans);
-                            hideLocationDetecting();
                             updateLocationDisplay('Location detected - Showing available plans');
                         }
                     })
                     .catch(error => {
                         console.error('Reverse geocoding error:', error);
                         filterComparisonColumns(otherPlans);
-                        hideLocationDetecting();
                         updateLocationDisplay('Location detected - Showing available plans');
                     });
             },
@@ -470,7 +400,6 @@
                 // Show otherPlans when location access is denied or unavailable
                 console.log('Showing otherPlans due to geolocation error');
                 filterComparisonColumns(otherPlans);
-                hideLocationDetecting();
 
                 if (error.code === error.PERMISSION_DENIED) {
                     updateLocationDisplay('Location access denied - Showing available plans');
@@ -484,7 +413,7 @@
             },
             {
                 enableHighAccuracy: true,
-                timeout: 50000, // 10 seconds timeout
+                timeout: 10000, // 10 seconds timeout
                 maximumAge: 300000 // 5 minutes cache
             }
         );
