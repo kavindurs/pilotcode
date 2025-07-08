@@ -598,6 +598,10 @@ Route::prefix('admin')->group(function () {
          ->name('admin.plans.update')
          ->middleware('auth:admin');
 
+    Route::delete('plans/{id}', [\App\Http\Controllers\Admin\PlanController::class, 'destroy'])
+         ->name('admin.plans.destroy')
+         ->middleware('auth:admin');
+
     // Referrals Management
     Route::get('referrals', [\App\Http\Controllers\Admin\ReferralController::class, 'index'])
          ->name('admin.referrals.index')
@@ -855,6 +859,7 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/pricing', [App\Http\Controllers\HomeController::class, 'pricing'])->name('pricing');
 
+// Static pages routes
 Route::get('/privacy-policy', function () {
     return view('home.privacy_policy');
 })->name('privacy.policy');
@@ -866,6 +871,10 @@ Route::get('/terms-and-conditions', function () {
 Route::get('/contact-us', function () {
     return view('home.contact_us');
 })->name('contact.us');
+
+Route::get('/about-us', function () {
+    return view('home.about_us');
+})->name('about.us');
 
 // Contact form submission handler
 Route::post('/contact-us', function (Request $request) {
@@ -882,6 +891,39 @@ Route::post('/contact-us', function (Request $request) {
     return back()->with('success', 'Thank you for contacting us! We will get back to you soon.');
 })->name('contact.submit');
 
+// Business-specific static pages routes
+Route::get('/business/privacy-policy', function () {
+    return view('home.privacy_policy');
+})->name('business.privacy.policy');
+
+Route::get('/business/terms-and-conditions', function () {
+    return view('home.terms_conditions');
+})->name('business.terms.conditions');
+
+Route::get('/business/contact-us', function () {
+    return view('home.contact_us');
+})->name('business.contact.us');
+
+Route::get('/business/about-us', function () {
+    return view('home.about_us');
+})->name('business.about.us');
+
+// Business contact form submission handler
+Route::post('/business/contact-us', function (Request $request) {
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
+        'subject' => 'required|string|max:255',
+        'message' => 'required|string',
+    ]);
+
+    // Here you would typically send an email with the contact form data
+    // Mail::to('info@scoreness.com')->send(new ContactFormMail($validated));
+
+    return back()->with('success', 'Thank you for contacting us! We will get back to you soon.');
+})->name('business.contact.submit');
+
+// Property submission route
 Route::post('/properties', [App\Http\Controllers\PropertyController::class, 'store'])->name('properties.store');
 
 Route::get('/api/subcategories/{categoryId}', function($categoryId) {

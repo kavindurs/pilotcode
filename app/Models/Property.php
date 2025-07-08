@@ -196,8 +196,8 @@ class Property extends Model
     {
         $plan = $this->getActivePlan();
 
-        if (!$plan) {
-            return 0;
+        if (!$plan || !$plan->plan) {
+            return 100; // Default to Free plan limit
         }
 
         switch ($plan->plan->name) {

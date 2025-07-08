@@ -5,9 +5,9 @@
     <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <!-- Top Bar -->
         <div class="hidden lg:flex items-center justify-end space-x-6 py-2 border-b border-gray-100">
-            <a href="{{ route('privacy.policy') }}" class="text-sm text-gray-600 hover:text-blue-600">Privacy & Policy</a>
-            <a href="{{ route('terms.conditions') }}" class="text-sm text-gray-600 hover:text-blue-600">Terms & Conditions</a>
-            <a href="{{ route('contact.us') }}" class="text-sm text-gray-600 hover:text-blue-600">Contact</a>
+            <a href="{{ route('business.privacy.policy') }}" class="text-sm text-gray-600 hover:text-blue-600">Privacy & Policy</a>
+            <a href="{{ route('business.terms.conditions') }}" class="text-sm text-gray-600 hover:text-blue-600">Terms & Conditions</a>
+            <a href="{{ route('business.contact.us') }}" class="text-sm text-gray-600 hover:text-blue-600">Contact</a>
         </div>
 
         <nav class="flex items-center justify-between h-16 lg:h-20">

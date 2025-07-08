@@ -75,7 +75,7 @@
                     <!-- Widget Image - Smaller on mobile -->
                     <div class="flex-shrink-0 w-24 sm:w-32 md:w-36">
                         <img
-                            src="http://cima.wuaze.com/wp-content/uploads/2022/07/widget-12.png"
+                            src="https://cimacleaners.com.au/wp-content/uploads/2025/07/widget-12.png"
                             alt="Free Cheatsheet"
                             class="w-full h-auto drop-shadow-lg"
                         />
@@ -90,7 +90,7 @@
 
                         <!-- CTA Button - More compact on mobile -->
                         <a
-                            href="#"
+                            href="/review"
                             class="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white transition-all duration-200 bg-orange-500 border-0 rounded-md hover:bg-orange-600 shadow-lg"
                         >
                             REVIEW NOW
@@ -106,7 +106,7 @@
                         class="w-full h-auto rounded-lg"
                         src="{{ asset('images/hero-person.png') }}"
                         alt="Business Expert"
-                        onerror="this.onerror=null; this.src='http://cima.wuaze.com/wp-content/uploads/2022/11/Image-2.png';"
+                        onerror="this.onerror=null; this.src='https://cimacleaners.com.au/wp-content/uploads/2025/07/Image-2.png';"
                     />
                 </div>
             </div>
@@ -341,3 +341,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+
+
+
+
+

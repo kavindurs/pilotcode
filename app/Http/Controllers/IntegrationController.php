@@ -32,6 +32,19 @@ class IntegrationController extends Controller
 
         // Get active plan and character limit
         $activePlan = $property->getActivePlan();
+
+        // If no active plan, create a default Free plan object for the view
+        if (!$activePlan || !$activePlan->plan) {
+            $activePlan = (object) [
+                'name' => 'Free',
+                'id' => 1,
+                'plan' => (object) [
+                    'name' => 'Free',
+                    'id' => 1
+                ]
+            ];
+        }
+
         $characterLimit = $property->getHtmlCharacterLimit();
 
         // Get integrations for this property
@@ -68,6 +81,19 @@ class IntegrationController extends Controller
 
         // Get character limit based on plan
         $activePlan = $property->getActivePlan();
+
+        // If no active plan, create a default Free plan object for the view
+        if (!$activePlan || !$activePlan->plan) {
+            $activePlan = (object) [
+                'name' => 'Free',
+                'id' => 1,
+                'plan' => (object) [
+                    'name' => 'Free',
+                    'id' => 1
+                ]
+            ];
+        }
+
         $characterLimit = $property->getHtmlCharacterLimit();
 
         // Get placement options
@@ -174,6 +200,19 @@ class IntegrationController extends Controller
 
         // Get character limit based on plan
         $activePlan = $property->getActivePlan();
+
+        // If no active plan, create a default Free plan object for the view
+        if (!$activePlan || !$activePlan->plan) {
+            $activePlan = (object) [
+                'name' => 'Free',
+                'id' => 1,
+                'plan' => (object) [
+                    'name' => 'Free',
+                    'id' => 1
+                ]
+            ];
+        }
+
         $characterLimit = $property->getHtmlCharacterLimit();
 
         // Check if current content exceeds the limit of current plan

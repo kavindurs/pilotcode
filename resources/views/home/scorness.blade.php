@@ -9,8 +9,8 @@
                     We're a review platform that's open to everyone. Our vision is to become the universal symbol of trust — by empowering people to make informed decisions, and helping businesses improve through authentic feedback.
                 </p>
                 <div class="mt-8">
-                    <a href="#" class="inline-flex items-center px-6 py-3 bg-gray-900 text-white font-medium rounded-md shadow-sm hover:bg-gray-800 transition-colors">
-                        What we do
+                    <a href="/login" class="inline-flex items-center px-6 py-3 bg-gray-900 text-white font-medium rounded-md shadow-sm hover:bg-gray-800 transition-colors">
+                        Sign Up Now!
                     </a>
                 </div>
             </div>
@@ -42,8 +42,8 @@
                 </div>
 
                 <div class="text-center">
-                    <a href="#" class="inline-block border-2 border-white text-white font-medium rounded-full px-6 py-2 hover:bg-white hover:text-gray-900 transition-colors">
-                        Take a look
+                    <a href="/about-us" class="inline-block border-2 border-white text-white font-medium rounded-full px-6 py-2 hover:bg-white hover:text-gray-900 transition-colors">
+                        See More
                     </a>
                 </div>
             </div>

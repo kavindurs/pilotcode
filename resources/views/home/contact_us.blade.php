@@ -1,6 +1,11 @@
 <!-- filepath: c:\xampp\htdocs\pilot\resources\views\home\contact_us.blade.php -->
 
-@extends('layouts.app')
+@php
+    // Determine which layout to use based on the current route
+    $layout = request()->route()->getName() === 'business.contact.us' ? 'layouts.business_app' : 'layouts.app';
+@endphp
+
+@extends($layout)
 
 @section('title', 'Contact Us - Scoreness')
 

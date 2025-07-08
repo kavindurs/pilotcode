@@ -1,5 +1,10 @@
 <!-- filepath: c:\xampp\htdocs\pilot\resources\views\home\terms_conditions.blade.php -->
-@extends('layouts.app')
+@php
+    // Determine which layout to use based on the current route
+    $layout = request()->route()->getName() === 'business.terms.conditions' ? 'layouts.business_app' : 'layouts.app';
+@endphp
+
+@extends($layout)
 
 @section('title', 'Terms and Conditions - Scoreness')
 

@@ -139,6 +139,10 @@
                                             <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium flex items-center">
                                                 <i class="fas fa-check-circle mr-1"></i> Verified
                                             </span>
+                                        @else
+                                            <span class="ml-2 px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium flex items-center">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i> Not Claimed
+                                            </span>
                                         @endif
                                     </div>
 
@@ -243,7 +247,13 @@
                                     </span>
                                     <div>
                                         <div class="text-xs text-gray-500 mb-0.5">Email</div>
-                                        <div class="text-sm font-medium text-gray-700 truncate max-w-[140px]">{{ $property->business_email }}</div>
+                                        <div class="text-sm font-medium text-gray-700 truncate max-w-[140px]">
+                                            @if($property->status == 'Approved')
+                                                {{ $property->business_email }}
+                                            @else
+                                                support@scoreness.com
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
 
@@ -297,6 +307,12 @@
                                 <button class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
                                     <i class="far fa-bookmark mr-2"></i> Save
                                 </button>
+
+                                @if($property->status != 'Approved')
+                                    <a href="{{ url('/claim-business/' . $property->id) }}" class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors">
+                                        <i class="fas fa-hand-paper mr-2"></i> Claim This Business
+                                    </a>
+                                @endif
                             </div>
 
                             <!-- Social Media Links -->

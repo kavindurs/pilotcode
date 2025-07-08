@@ -87,9 +87,9 @@
                 <div class="mb-6">
                     <div class="flex flex-wrap gap-2 text-sm">
                         <span class="text-gray-500">Trending:</span>
-                        <a href="#" class="text-blue-600 hover:underline trending-search">Restaurants</a>
-                        <a href="#" class="text-blue-600 hover:underline trending-search">Hotels</a>
-                        <a href="#" class="text-blue-600 hover:underline trending-search">Online Shops</a>
+                        <a href="#" class="text-blue-600 hover:underline trending-search">Transport</a>
+                        <a href="#" class="text-blue-600 hover:underline trending-search">Scam Reports</a>
+                        <a href="#" class="text-blue-600 hover:underline trending-search">Bars & Cafes</a>
                     </div>
                 </div>
 

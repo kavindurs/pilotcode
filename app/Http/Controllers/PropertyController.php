@@ -239,42 +239,39 @@ class PropertyController extends Controller
             abort(404, 'Category not found or inactive');
         }
 
-        // Filter properties by subcategory ID and approved status
-        $query = Property::where('subcategory', $subcategoryModel->id)
-            ->where(function($q) {
-                $q->where('status', 'Approved')
-                  ->orWhere('status', 'Not Claimed');
-            });
+        // Create base query for this subcategory
+        $baseQuery = Property::where('subcategory', $subcategoryModel->id);
 
-        // Apply rating filter
+        // Apply filters to base query
         if ($request->rating && $request->rating !== 'any') {
             $minRating = floatval($request->rating);
-            $query->whereHas('rates', function($q) use ($minRating) {
+            $baseQuery->whereHas('rates', function($q) use ($minRating) {
                 $q->where('status', 'Approved')
                   ->havingRaw('AVG(rate) >= ?', [$minRating]);
             });
         }
 
-        // Apply location filters
         if ($request->country) {
-            $query->where('country', $request->country);
+            $baseQuery->where('country', $request->country);
         }
 
         if ($request->zip_code) {
-            $query->where(function($q) use ($request) {
+            $baseQuery->where(function($q) use ($request) {
                 $q->where('zip_code', $request->zip_code)
                   ->orWhere('city', 'LIKE', '%' . $request->zip_code . '%');
             });
         }
 
-        // Apply property type filter - if no type selected, show all
         if (!empty($request->property_type)) {
-            $query->whereIn('property_type', $request->property_type);
+            $baseQuery->whereIn('property_type', $request->property_type);
         } else {
-            $query->whereIn('property_type', ['physical', 'web']);
+            $baseQuery->whereIn('property_type', ['physical', 'web']);
         }
 
-        $properties = $query->with(['category', 'subcategory'])
+        // Get Approved businesses (these are claimed/verified businesses)
+        $claimedProperties = (clone $baseQuery)
+            ->where('status', 'Approved')
+            ->with(['category', 'subcategory'])
             ->withCount(['rates' => function($query) {
                 $query->where('status', 'Approved');
             }])
@@ -282,6 +279,21 @@ class PropertyController extends Controller
                 $query->where('status', 'Approved');
             }], 'rate')
             ->get();
+
+        // Get Not Claimed businesses
+        $notClaimedProperties = (clone $baseQuery)
+            ->where('status', 'Not Claimed')
+            ->with(['category', 'subcategory'])
+            ->withCount(['rates' => function($query) {
+                $query->where('status', 'Approved');
+            }])
+            ->withAvg(['rates' => function($query) {
+                $query->where('status', 'Approved');
+            }], 'rate')
+            ->get();
+
+        // Combine both collections for backward compatibility (total count, etc.)
+        $properties = $claimedProperties->merge($notClaimedProperties);
 
         // Get unique countries for dropdown
         $countries = Property::where('status', 'Approved')
@@ -303,6 +315,8 @@ class PropertyController extends Controller
 
         return view('properties.by-subcategory', compact(
             'properties',
+            'claimedProperties',
+            'notClaimedProperties',
             'subcategoryModel',
             'category',
             'countries',

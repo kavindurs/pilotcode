@@ -37,7 +37,7 @@
         position: relative;
     }
     .star-rating .stars-bg {
-        color: rgba(250, 204, 21, 0.3);
+        color: #E5E7EB;
     }
     .star-rating .stars-fg {
         color: #FACC15;
@@ -286,14 +286,32 @@
                 <div class="bg-white rounded-lg shadow-sm mb-4 px-4 py-3 flex justify-between items-center border border-gray-100">
                     <div class="text-sm text-gray-600">
                         <strong>{{ $properties->count() }}</strong> {{ Str::plural('result', $properties->count()) }} found
+                        @if($claimedProperties->count() > 0 && $notClaimedProperties->count() > 0)
+                            ({{ $claimedProperties->count() }} claimed, {{ $notClaimedProperties->count() }} available for claim)
+                        @endif
                     </div>
                     <!-- Could add sorting options here in the future -->
                 </div>
 
-                <!-- Enhanced Business Card Design -->
-                <div class="space-y-4">
-                    @foreach($properties as $property)
-                    <div class="business-card bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300">
+                @if($claimedProperties->count() > 0)
+                    <!-- Claimed Businesses Section -->
+                    <div class="mb-8">
+                        <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg shadow-sm mb-4 px-4 py-3 border border-green-200">
+                            <div class="flex items-center">
+                                <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-check text-green-600 text-sm"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-800">Verified Businesses</h3>
+                                <span class="ml-2 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                    {{ $claimedProperties->count() }} {{ Str::plural('business', $claimedProperties->count()) }}
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-1 ml-9">These businesses are claimed and verified by their owners</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            @foreach($claimedProperties as $property)
+                    <div class="business-card bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 relative">
                         <div class="p-4">
                             <!-- Mobile Layout with Reduced Spacing -->
                             <div class="flex flex-col sm:hidden">
@@ -340,7 +358,6 @@
                                                     {{ number_format($property->rates_avg_rate ?? 0, 1) }}
                                                 </span>
                                                 <div class="star-rating text-sm">
-
                                                     <div class="stars-fg" style="width: {{ ($property->rates_avg_rate / 5) * 100 }}%">★★★★★</div>
                                                 </div>
                                                 <span class="ml-1 text-xs text-gray-500">({{ $property->rates_count }})</span>
@@ -404,6 +421,10 @@
                                             <i class="fas {{ strtolower($property->property_type) == 'web' ? 'fa-globe' : 'fa-store' }} mr-1 {{ strtolower($property->property_type) == 'web' ? 'text-purple-400' : 'text-green-400' }}"></i>
                                             {{ $property->property_type }}
                                         </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 bg-green-100 text-green-700 rounded-md text-xs font-medium border border-green-200">
+                                            <i class="fas fa-check-circle mr-1 text-green-500"></i>
+                                            Verified
+                                        </span>
                                     </div>
 
                                     @auth
@@ -433,9 +454,6 @@
                                             <i class="fas fa-building text-2xl text-blue-300"></i>
                                         </div>
                                     @endif
-
-                                    <!-- Property Type Badge - Smaller -->
-
                                 </div>
 
                                 <!-- Main Content with Reduced Spacing -->
@@ -544,6 +562,10 @@
                                                 <i class="fas {{ strtolower($property->property_type) == 'web' ? 'fa-globe' : 'fa-store' }} mr-1 {{ strtolower($property->property_type) == 'web' ? 'text-purple-400' : 'text-green-400' }}"></i>
                                                 {{ $property->property_type }}
                                             </span>
+                                            <span class="inline-flex items-center px-2 py-0.5 bg-green-100 text-green-700 rounded-md text-xs font-medium border border-green-200">
+                                                <i class="fas fa-check-circle mr-1 text-green-500"></i>
+                                                Verified
+                                            </span>
                                         </div>
 
                                         @auth
@@ -559,7 +581,321 @@
                         </div>
                     </div>
                     @endforeach
-                </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if($notClaimedProperties->count() > 0)
+                    <!-- Not Claimed Businesses Section -->
+                    <div class="mb-8">
+                        <div class="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg shadow-sm mb-4 px-4 py-3 border border-orange-200">
+                            <div class="flex items-center">
+                                <div class="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-exclamation-circle text-orange-600 text-sm"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-800">Available to Claim</h3>
+                                <span class="ml-2 bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                    {{ $notClaimedProperties->count() }} {{ Str::plural('business', $notClaimedProperties->count()) }}
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-1 ml-9">These businesses are not yet claimed by their owners</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            @foreach($notClaimedProperties as $property)
+                    <div class="business-card bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 relative">
+                        <div class="p-4">
+                            <!-- Mobile Layout with Reduced Spacing -->
+                            <div class="flex flex-col sm:hidden">
+                                <!-- Combined Business Name and Property Type Badge with Less Margin -->
+                                <div class="flex items-center mb-2">
+                                    <h3 class="text-lg font-bold text-gray-800 truncate mr-2">
+                                        <a href="{{ route('property.show', $property) }}" class="hover:text-blue-600 transition-colors">
+                                            {{ $property->business_name }}
+                                        </a>
+                                    </h3>
+                                </div>
+
+                                <!-- Reduced Spacing in Logo and Info Area -->
+                                <div class="flex items-start space-x-3 mb-3">
+                                    <!-- Smaller Logo Container -->
+                                    <div class="w-16 h-16 flex-shrink-0 bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 relative">
+                                        @if($property->profile_picture)
+                                            <img src="{{ asset('storage/' . $property->profile_picture) }}"
+                                                 alt="{{ $property->business_name }}"
+                                                 class="w-full h-full object-cover">
+                                        @elseif($property->document_path)
+                                            <img src="{{ asset('storage/' . $property->document_path) }}"
+                                                 alt="{{ $property->business_name }}"
+                                                 class="w-full h-full object-cover">
+                                        @else
+                                            <div class="w-full h-full flex items-center justify-center bg-gray-50">
+                                                <i class="fas fa-building text-xl text-blue-300"></i>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <!-- Reduced Spacing in Rating and Location -->
+                                    <div class="flex-grow">
+                                        <p class="text-xs text-gray-600 flex items-center mb-1.5">
+                                            <span class="flex-shrink-0 w-4 h-4 flex items-center justify-center text-blue-500 mr-1">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                            </span>
+                                            <span>{{ $property->city }}, {{ $property->country }}</span>
+                                        </p>
+
+                                        @if($property->rates_count > 0)
+                                            <div class="flex items-center">
+                                                <span class="text-sm font-semibold text-blue-700 mr-1.5">
+                                                    {{ number_format($property->rates_avg_rate ?? 0, 1) }}
+                                                </span>
+                                                <div class="star-rating text-sm">
+                                                    <div class="stars-bg">★★★★★</div>
+                                                    <div class="stars-fg" style="width: {{ ($property->rates_avg_rate / 5) * 100 }}%">★★★★★</div>
+                                                </div>
+                                                <span class="ml-1 text-xs text-gray-500">({{ $property->rates_count }})</span>
+                                            </div>
+                                        @else
+                                            <div class="flex items-center text-gray-400 italic text-xs">
+                                                <i class="fas fa-star mr-1"></i> No reviews yet
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <!-- More Compact Mobile Details Grid -->
+                                <div class="grid grid-cols-2 gap-2 mb-3">
+                                    <div class="bg-gray-50 rounded-md p-2 flex items-center">
+                                        <span class="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                                            <i class="fas fa-envelope text-xs"></i>
+                                        </span>
+                                        <span class="text-xs text-gray-700 truncate">support@scoreness.com</span>
+                                    </div>
+
+                                    @if($property->domain)
+                                    <div class="bg-gray-50 rounded-md p-2 flex items-center">
+                                        <span class="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                                            <i class="fas fa-globe text-xs"></i>
+                                        </span>
+                                        <a href="{{ $property->domain }}" target="_blank"
+                                           class="text-xs text-blue-600 hover:text-blue-800 hover:underline truncate">
+                                            Website
+                                        </a>
+                                    </div>
+                                    @endif
+
+                                    <div class="bg-gray-50 rounded-md p-2 flex items-center">
+                                        <span class="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                                            <i class="fas fa-users text-xs"></i>
+                                        </span>
+                                        <span class="text-xs text-gray-700">{{ $property->employee_count }}</span>
+                                    </div>
+
+                                    <div class="bg-gray-50 rounded-md p-2 flex items-center">
+                                        <span class="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                                            <i class="fas fa-chart-line text-xs"></i>
+                                        </span>
+                                        <span class="text-xs text-gray-700">{{ $property->annual_revenue }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Condensed Category/Review Section -->
+                                <div class="border-t border-gray-100 pt-3">
+                                    <div class="flex flex-wrap gap-1.5 mb-3">
+                                        <span class="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-xs font-medium border border-blue-100">
+                                            <i class="fas fa-tag mr-1 text-blue-400"></i>
+                                            {{ $property->category }}
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md text-xs font-medium border border-indigo-100">
+                                            <i class="fas fa-bookmark mr-1 text-indigo-400"></i>
+                                            {{ $property->subcategory }}
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 ml-1.5 rounded-md text-xs font-medium border {{ strtolower($property->property_type) == 'web' ? 'bg-purple-50 text-purple-700 border-purple-100' : 'bg-green-50 text-green-700 border-green-100' }}">
+                                            <i class="fas {{ strtolower($property->property_type) == 'web' ? 'fa-globe' : 'fa-store' }} mr-1 {{ strtolower($property->property_type) == 'web' ? 'text-purple-400' : 'text-green-400' }}"></i>
+                                            {{ $property->property_type }}
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 bg-orange-100 text-orange-700 rounded-md text-xs font-medium border border-orange-200">
+                                            <i class="fas fa-exclamation-triangle mr-1 text-orange-500"></i>
+                                            Not Claimed
+                                        </span>
+                                    </div>
+
+                                    <!-- Action Buttons for Not Claimed -->
+                                    <div class="flex flex-col space-y-2">
+                                        @auth
+                                        <a href="{{ route('rate.create', $property) }}"
+                                           class="w-full inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors shadow-sm">
+                                            <i class="fas fa-star mr-1.5"></i>
+                                            Write Review
+                                        </a>
+                                        @endauth
+
+                                        <a href="{{ url('/claim-business/' . $property->id) }}"
+                                           class="w-full inline-flex items-center justify-center px-4 py-2.5 bg-orange-600 text-white text-xs rounded-md hover:bg-orange-700 transition-colors shadow-sm">
+                                            <i class="fas fa-hand-paper mr-1.5"></i>
+                                            Claim This Business
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Desktop Layout with Reduced Height -->
+                            <div class="hidden sm:flex items-start">
+                                <!-- Smaller Logo -->
+                                <div class="w-20 h-20 flex-shrink-0 bg-white rounded-lg overflow-hidden mr-5 shadow-md border border-gray-200 relative group">
+                                    @if($property->profile_picture)
+                                        <img src="{{ asset('storage/' . $property->profile_picture) }}"
+                                             alt="{{ $property->business_name }}"
+                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    @elseif($property->document_path)
+                                        <img src="{{ asset('storage/' . $property->document_path) }}"
+                                             alt="{{ $property->business_name }}"
+                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center bg-gray-50">
+                                            <i class="fas fa-building text-2xl text-blue-300"></i>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <!-- Main Content with Reduced Spacing -->
+                                <div class="flex-grow min-w-0">
+                                    <!-- More Compact Header Section -->
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h3 class="text-lg font-bold text-gray-800 mb-1 group">
+                                                <a href="{{ route('property.show', $property) }}" class="hover:text-blue-600 transition-colors inline-flex items-center">
+                                                    <span class="truncate">{{ $property->business_name }}</span>
+                                                    <i class="fas fa-external-link-alt ml-2 text-xs text-gray-400 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                                </a>
+                                            </h3>
+
+                                            <!-- Location with Smaller Icon -->
+                                            <p class="text-xs text-gray-600 flex items-center">
+                                                <span class="flex-shrink-0 w-4 h-4 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 mr-1.5">
+                                                    <i class="fas fa-map-marker-alt text-xs"></i>
+                                                </span>
+                                                <span>{{ $property->city }}, {{ $property->country }}</span>
+                                            </p>
+                                        </div>
+
+                                        <!-- Condensed Rating Section -->
+                                        <div class="text-right">
+                                            @if($property->rates_count > 0)
+                                                <div class="flex items-center justify-end">
+                                                    <span class="text-xl font-bold text-blue-700 mr-1.5">
+                                                        {{ number_format($property->rates_avg_rate ?? 0, 1) }}
+                                                    </span>
+                                                    <div class="star-rating text-lg">
+                                                        <div class="stars-bg">★★★★★</div>
+                                                        <div class="stars-fg" style="width: {{ ($property->rates_avg_rate / 5) * 100 }}%">★★★★★</div>
+                                                    </div>
+                                                </div>
+                                                <span class="text-xs text-gray-500">{{ $property->rates_count }} {{ Str::plural('review', $property->rates_count) }}</span>
+                                            @else
+                                                <div class="bg-gray-50 px-2 py-1 rounded-md border border-gray-200">
+                                                    <span class="text-xs text-gray-500 italic">No reviews yet</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <!-- Flatter Details Grid -->
+                                    <div class="grid grid-cols-4 gap-2 mb-3">
+                                        <div class="bg-gray-50 rounded-md p-2 flex items-center border border-gray-100">
+                                            <span class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                                                <i class="fas fa-envelope text-xs"></i>
+                                            </span>
+                                            <div class="truncate">
+                                                <div class="text-xs text-gray-500 leading-tight">Email</div>
+                                                <div class="text-xs font-medium text-gray-700 truncate">support@scoreness.com</div>
+                                            </div>
+                                        </div>
+
+                                        @if($property->domain)
+                                        <div class="bg-gray-50 rounded-md p-2 flex items-center border border-gray-100">
+                                            <span class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                                                <i class="fas fa-globe text-xs"></i>
+                                            </span>
+                                            <div class="truncate">
+                                                <div class="text-xs text-gray-500 leading-tight">Website</div>
+                                                <a href="{{ $property->domain }}" target="_blank"
+                                                   class="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block">
+                                                    {{ str_replace(['http://', 'https://'], '', $property->domain) }}
+                                                </a>
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        <div class="bg-gray-50 rounded-md p-2 flex items-center border border-gray-100">
+                                            <span class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                                                <i class="fas fa-users text-xs"></i>
+                                            </span>
+                                            <div>
+                                                <div class="text-xs text-gray-500 leading-tight">Team</div>
+                                                <div class="text-xs font-medium text-gray-700">{{ $property->employee_count }}</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-gray-50 rounded-md p-2 flex items-center border border-gray-100">
+                                            <span class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                                                <i class="fas fa-chart-line text-xs"></i>
+                                            </span>
+                                            <div>
+                                                <div class="text-xs text-gray-500 leading-tight">Revenue</div>
+                                                <div class="text-xs font-medium text-gray-700">{{ $property->annual_revenue }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Compact Footer Section -->
+                                    <div class="flex items-center justify-between border-t border-gray-100 pt-2">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-xs font-medium border border-blue-100">
+                                                <i class="fas fa-tag mr-1 text-blue-400"></i>
+                                                {{ $property->category }}
+                                            </span>
+                                            <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+                                            <span class="inline-flex items-center px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md text-xs font-medium border border-indigo-100">
+                                                <i class="fas fa-bookmark mr-1 text-indigo-400"></i>
+                                                {{ $property->subcategory }}
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-0.5 ml-1.5 rounded-md text-xs font-medium border {{ strtolower($property->property_type) == 'web' ? 'bg-purple-50 text-purple-700 border-purple-100' : 'bg-green-50 text-green-700 border-green-100' }}">
+                                                <i class="fas {{ strtolower($property->property_type) == 'web' ? 'fa-globe' : 'fa-store' }} mr-1 {{ strtolower($property->property_type) == 'web' ? 'text-purple-400' : 'text-green-400' }}"></i>
+                                                {{ $property->property_type }}
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-0.5 bg-orange-100 text-orange-700 rounded-md text-xs font-medium border border-orange-200">
+                                                <i class="fas fa-exclamation-triangle mr-1 text-orange-500"></i>
+                                                Not Claimed
+                                            </span>
+                                        </div>
+
+                                        <!-- Action Buttons for Not Claimed Desktop -->
+                                        <div class="flex space-x-2">
+                                            @auth
+                                            <a href="{{ route('rate.create', $property) }}"
+                                               class="inline-flex items-center px-3 py-2.5 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors shadow-sm">
+                                                <i class="fas fa-star mr-1.5"></i>
+                                                Write Review
+                                            </a>
+                                            @endauth
+
+                                            <a href="{{ url('/claim-business/' . $property->id) }}"
+                                               class="inline-flex items-center px-3 py-2.5 bg-orange-600 text-white text-xs rounded-md hover:bg-orange-700 transition-colors shadow-sm">
+                                                <i class="fas fa-hand-paper mr-1.5"></i>
+                                                Claim This Business
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                        </div>
+                    </div>
+                @endif
+
             @endif
         </div>
     </div>

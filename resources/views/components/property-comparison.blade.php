@@ -10,7 +10,7 @@
         <!-- Section heading with subtitle in the same style as feature.blade.php -->
         <div class="text-center mb-12 mt-12">
             <h2 class="text-3xl font-bold leading-tight text-gray-900 sm:text-4xl xl:text-5xl font-pj">Property Comparison Tool</h2>
-            <p class="mt-4 text-base leading-7 text-gray-600 sm:mt-8 font-pj">Compare two properties side by side to make informed decisions</p>
+            <p class="mt-4 text-base leading-7 text-gray-600 sm:mt-8 font-pj">Compare two properties to make the best decision</p>
         </div>
 
         <!-- Property Selection -->

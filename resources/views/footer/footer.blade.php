@@ -64,11 +64,11 @@
                     </li>
 
                     <li>
-                        <a href="/" title="" class="flex text-base text-black transition-all duration-200 hover:text-blue-600 focus:text-blue-600"> For Customer </a>
+                        <a href="{{ auth()->check() ? '/dashboard' : '/' }}" title="" class="flex text-base text-black transition-all duration-200 hover:text-blue-600 focus:text-blue-600"> For Customer </a>
                     </li>
 
                     <li>
-                        <a href="{{ route('register.show') }}" title="" class="flex text-base text-black transition-all duration-200 hover:text-blue-600 focus:text-blue-600"> For Business </a>
+                        <a href="/business" title="" class="flex text-base text-black transition-all duration-200 hover:text-blue-600 focus:text-blue-600"> For Business </a>
                     </li>
                 </ul>
             </div>
@@ -82,7 +82,7 @@
                     </li>
 
                     <li>
-                        <a href="{{ route('contact.us') }}" title="" class="flex text-base text-black transition-all duration-200 hover:text-blue-600 focus:text-blue-600"> Get Help</a>
+                        <a href="{{ route('about.us') }}" title="" class="flex text-base text-black transition-all duration-200 hover:text-blue-600 focus:text-blue-600"> About Us </a>
                     </li>
 
                     <li>

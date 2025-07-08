@@ -10,14 +10,14 @@
             <div class="lg:col-span-3 max-w-2xl">
                 <!-- Bold headline with all caps for impact -->
                 <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-white uppercase">
-                    HELPING USERS<br class="hidden md:block">
-                    FIND <span class="text-yellow-300">AUTHENTIC</span><br class="hidden md:block">
-                    REVIEWS!
+                    CLAIM YOUR<br class="hidden md:block">
+                    BUSINESS <span class="text-yellow-300">PROFILE</span><br class="hidden md:block">
+                    INSTANTLY!
                 </h1>
 
                 <!-- Subheading -->
                 <p class="mt-4 sm:mt-6 text-lg sm:text-xl leading-relaxed text-white">
-                    Scoreness is a trusted rating and review platform where users evaluate and compare both physical businesses and online services.
+                    Manage your reputation, connect with your customers, and showcase what makes your business special.
                 </p>
 
                 <!-- Search Bar with Autocomplete -->
@@ -26,7 +26,7 @@
                         <input
                             type="text"
                             id="search-input"
-                            placeholder="Search for businesses or categories..."
+                            placeholder="Search for your business name or location..."
                             class="w-full py-3 sm:py-4 px-4 sm:px-5 pl-10 sm:pl-12 text-sm sm:text-base text-black placeholder-gray-500 bg-white border-0 rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-white"
                         />
                         <div class="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-blue-600">
@@ -55,10 +55,10 @@
                     </div>
 
                     <div class="mt-2 flex flex-wrap gap-2 text-xs text-blue-100">
-                        <span>Trending:</span>
-                        <a href="#" class="hover:text-white trending-search">Restaurants</a>
-                        <a href="#" class="hover:text-white trending-search">Hotels</a>
-                        <a href="#" class="hover:text-white trending-search">Online Shops</a>
+                        <span>Search:</span>
+                        <a href="#" class="hover:text-white trending-search">Scoreness</a>
+                        <a href="#" class="hover:text-white trending-search">Daraz</a>
+                        <a href="#" class="hover:text-white trending-search">Ali Express</a>
                     </div>
                 </div>
 
@@ -67,7 +67,7 @@
                     <!-- Widget Image - Smaller on mobile -->
                     <div class="flex-shrink-0 w-24 sm:w-32 md:w-36">
                         <img
-                            src="http://cima.wuaze.com/wp-content/uploads/2022/07/widget-12.png"
+                            src="https://cimacleaners.com.au/wp-content/uploads/2025/07/widget-12.png"
                             alt="Free Cheatsheet"
                             class="w-full h-auto drop-shadow-lg"
                         />
@@ -75,17 +75,18 @@
 
                     <!-- Widget Content - Better spacing on mobile -->
                     <div>
-                        <h3 class="text-lg sm:text-xl font-bold text-white mb-1 sm:mb-2">Free Business Review Guide</h3>
+                        <h3 class="text-lg sm:text-xl font-bold text-white mb-1 sm:mb-2">Contact Us for Free Today</h3>
                         <p class="text-xs sm:text-sm text-blue-100 mb-3 sm:mb-4">
-                            Discover how to evaluate businesses effectively in 5 minutes. Perfect for consumers and business owners alike!
+                            Ready to claim your business? Our team is here to help you get started. Reach out to us and take control of your online presence in minutes.
+
                         </p>
 
                         <!-- CTA Button - More compact on mobile -->
                         <a
-                            href="#"
+                            href="/contact-us"
                             class="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white transition-all duration-200 bg-orange-500 border-0 rounded-md hover:bg-orange-600 shadow-lg"
                         >
-                            REVIEW NOW
+                            CONTACT US
                         </a>
                     </div>
                 </div>
@@ -98,7 +99,7 @@
                         class="w-full h-auto rounded-lg"
                         src="{{ asset('images/hero-person.png') }}"
                         alt="Business Expert"
-                        onerror="this.onerror=null; this.src='http://cima.wuaze.com/wp-content/uploads/2022/11/Image-2.png';"
+                        onerror="this.onerror=null; this.src='https://cimacleaners.com.au/wp-content/uploads/2025/07/Image-2.png';"
                     />
                 </div>
             </div>

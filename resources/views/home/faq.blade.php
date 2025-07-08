@@ -85,7 +85,7 @@
             </div>
         </div>
 
-        <p class="text-center text-gray-600 mt-9">Didn't find the answer you are looking for? <a href="#" class="font-medium text-blue-600 transition-all duration-200 hover:text-blue-700 focus:text-blue-700 hover:underline">Contact our support team</a></p>
+        <p class="text-center text-gray-600 mt-9">Didn't find the answer you are looking for? <a href="/contact-us" class="font-medium text-blue-600 transition-all duration-200 hover:text-blue-700 focus:text-blue-700 hover:underline">Contact our support team</a></p>
     </div>
 </section>
 
