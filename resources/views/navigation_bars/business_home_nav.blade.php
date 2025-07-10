@@ -26,13 +26,13 @@
                 </a>
                 <!-- Categories Dropdown -->
                 <div class="relative group">
-                    <button class="flex items-center space-x-2 text-base font-medium text-black transition-all duration-200 hover:text-blue-600">
+                    <a href="{{ route('categories.index') }}" class="flex items-center space-x-2 text-base font-medium text-black transition-all duration-200 hover:text-blue-600">
                         <i class="fas fa-th-large"></i>
                         <span>Categories</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
-                    </button>
+                    </a>
 
                     <!-- Enhanced Mega Menu with improved transitions -->
                     <div class="absolute left-0 z-50 w-[500px] p-6 mt-4 bg-white border border-gray-100 rounded-xl shadow-lg transform opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-in-out">
@@ -121,12 +121,16 @@
                     <div class="flex flex-col px-6 -my-2 space-y-1">
                         <!-- Mobile Categories -->
                         <div class="py-2" x-data="{ isOpen: false }">
-                            <button @click="isOpen = !isOpen" class="flex items-center justify-between w-full text-base font-medium text-black">
-                                <span>Categories</span>
-                                <svg class="w-4 h-4" :class="{'rotate-180': isOpen}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
+                            <div class="flex items-center justify-between w-full">
+                                <a href="{{ route('categories.index') }}" class="flex items-center text-base font-medium text-black hover:text-blue-600">
+                                    <span>Categories</span>
+                                </a>
+                                <button @click="isOpen = !isOpen" class="ml-2 p-1">
+                                    <svg class="w-4 h-4" :class="{'rotate-180': isOpen}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </div>
 
                             <div x-show="isOpen" class="mt-2 space-y-2 pl-4">
                                 <!-- Mobile Category Items -->

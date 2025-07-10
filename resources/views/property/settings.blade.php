@@ -42,7 +42,7 @@
             <div class="col-span-full flex items-center space-x-6">
                 <div class="h-24 w-24 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative">
                     @if($property->profile_picture)
-                        <img src="{{ asset('storage/' . $property->profile_picture) }}" alt="Profile picture" class="h-full w-full object-cover">
+                        <img src="{{ asset('storage/app/public/' . $property->profile_picture) }}" alt="Profile picture" class="h-full w-full object-cover">
                     @else
                         <div class="flex items-center justify-center h-full w-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400">
                             <i class="fas fa-user text-3xl"></i>

@@ -223,7 +223,7 @@ class PlanPaymentController extends Controller
                 'customer_name' => $paymentData['customer_name'],
                 'amount' => $paymentData['amount'] * 3, // Multiply amount by 3 before storing
                 'currency' => $paymentData['currency'],
-                'status' => 'completed', // Set as completed immediately
+                'status' => 'Confirmed', // Set as completed immediately
                 'order_id' => $paymentData['order_id'],
                 'payment_method' => $paymentData['payment_method'],
                 'transaction_id' => $request->get('transaction_id', $paymentData['gateway_transaction_id'] ?? $paymentData['order_id']),

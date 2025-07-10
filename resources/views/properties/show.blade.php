@@ -113,11 +113,11 @@
                         <!-- Logo/Image Section -->
                         <div class="w-full md:w-48 h-48 bg-white rounded-lg overflow-hidden mb-6 md:mb-0 md:mr-6 shadow-md border border-gray-200 relative flex-shrink-0">
                             @if($property->profile_picture)
-                                <img src="{{ asset('storage/' . $property->profile_picture) }}"
+                                <img src="{{ asset('storage/app/public/' . $property->profile_picture) }}"
                                      alt="{{ $property->business_name }}"
                                      class="w-full h-full object-cover">
                             @elseif($property->document_path)
-                                <img src="{{ asset('storage/' . $property->document_path) }}"
+                                <img src="{{ asset('storage/app/public/' . $property->document_path) }}"
                                      alt="{{ $property->business_name }}"
                                      class="w-full h-full object-cover">
                             @else
@@ -541,7 +541,7 @@
                                             <!-- User profile picture - dynamically loads from users table -->
                                             <div class="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-blue-600 mr-3 shadow-sm">
                                                 @if($review->user && $review->user->profile_picture)
-                                                    <img src="{{ asset('storage/' . $review->user->profile_picture) }}"
+                                                    <img src="{{ asset('storage/app/public/' . $review->user->profile_picture) }}"
                                                          alt="{{ $review->user->name ?? 'User' }}"
                                                          class="w-full h-full object-cover">
                                                 @else
@@ -748,7 +748,7 @@
                                                 <!-- Product Image -->
                                                 <div class="h-48 overflow-hidden bg-gray-100 relative">
                                                     @if($product->image_path)
-                                                        <img src="{{ asset('storage/' . $product->image_path) }}"
+                                                        <img src="{{ asset('storage/app/public/' . $product->image_path) }}"
                                                              alt="{{ $product->name }}"
                                                              class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
                                                     @else

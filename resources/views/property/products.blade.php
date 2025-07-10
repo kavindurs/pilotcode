@@ -86,7 +86,7 @@
                             <div class="col-span-4 flex items-center space-x-4">
                                 <div class="w-12 h-12 flex-shrink-0">
                                     @if($product->image_path)
-                                        <img src="{{ asset('storage/' . $product->image_path) }}"
+                                        <img src="{{ asset('storage/app/public/' . $product->image_path) }}"
                                              alt="{{ $product->name }}"
                                              class="w-12 h-12 rounded-lg object-cover">
                                     @else

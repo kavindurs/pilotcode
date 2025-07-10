@@ -133,12 +133,16 @@
                     <div class="flex flex-col px-6 -my-2 space-y-1">
                         <!-- Mobile Categories -->
                         <div class="py-2" x-data="{ isOpen: false }">
-                            <button @click="isOpen = !isOpen" class="flex items-center justify-between w-full text-base font-medium text-black">
-                                <span>Categories</span>
-                                <svg class="w-4 h-4" :class="{'rotate-180': isOpen}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
+                            <div class="flex items-center justify-between w-full">
+                                <a href="{{ route('categories.index') }}" class="flex items-center text-base font-medium text-black hover:text-blue-600">
+                                    <span>Categories</span>
+                                </a>
+                                <button @click="isOpen = !isOpen" class="ml-2 p-1">
+                                    <svg class="w-4 h-4" :class="{'rotate-180': isOpen}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            </div>
 
                             <div x-show="isOpen" class="mt-2 space-y-2 pl-4">
                                 <!-- Mobile Category Items -->
@@ -177,7 +181,7 @@
                 </div>
 
                 <div class="px-6 mt-6">
-                    <a href="{{ route('register.show') }}" class="inline-flex justify-center w-full px-4 py-3 text-base font-semibold text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
+                    <a href="/business" class="inline-flex justify-center w-full px-4 py-3 text-base font-semibold text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
                         For Business
                     </a>
                 </div>

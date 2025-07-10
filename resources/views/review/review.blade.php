@@ -354,7 +354,7 @@
                         <div class="flex items-center pt-2 border-t border-gray-200">
                             <a href="/property/{{ $review->property->id }}" class="flex items-center">
                                 @if($review->property->profile_picture)
-                                    <img src="/storage/{{ $review->property->profile_picture }}" alt="{{ $review->property->business_name }}" class="w-6 h-6 object-cover rounded-full mr-2">
+                                    <img src="/storage/app/public/{{ $review->property->profile_picture }}" alt="{{ $review->property->business_name }}" class="w-6 h-6 object-cover rounded-full mr-2">
                                 @else
                                     <div class="w-6 h-6 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center text-xs font-bold mr-2">
                                         {{ substr($review->property->business_name, 0, 1) }}
@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         if (property.profile_picture) {
                             const img = document.createElement('img');
-                            img.src = `/storage/${property.profile_picture}`;
+                            img.src = `/storage/app/public/${property.profile_picture}`;
                             img.alt = property.business_name;
                             img.className = 'w-10 h-10 object-cover rounded-md';
                             img.onerror = function() {

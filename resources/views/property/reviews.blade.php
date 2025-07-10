@@ -128,7 +128,7 @@
                                 <!-- User profile picture - dynamically loads from users table -->
                                 <div class="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center text-gray-400 mr-3 shadow-sm">
                                     @if($review->user && $review->user->profile_picture)
-                                        <img src="{{ asset('storage/' . $review->user->profile_picture) }}"
+                                        <img src="{{ asset('storage/app/public/' . $review->user->profile_picture) }}"
                                              alt="{{ $review->user->name ?? 'User' }}"
                                              class="w-full h-full object-cover">
                                     @else

@@ -105,7 +105,7 @@
                     @if(isset($product) && $product->image_path)
                         <div class="mt-2">
                             <p class="text-sm text-gray-400 mb-1">Current image:</p>
-                            <img src="{{ asset('storage/' . $product->image_path) }}" alt="{{ $product->name }}"
+                            <img src="{{ asset('storage/app/public/' . $product->image_path) }}" alt="{{ $product->name }}"
                                 class="h-24 w-auto object-contain border border-gray-600 rounded bg-gray-700">
                         </div>
                     @endif
@@ -139,7 +139,7 @@
                             <div class="flex items-start space-x-3">
                                 <div class="w-12 h-12 flex-shrink-0">
                                     @if($recentProduct->image_path)
-                                        <img src="{{ asset('storage/' . $recentProduct->image_path) }}"
+                                        <img src="{{ asset('storage/app/public/' . $recentProduct->image_path) }}"
                                              alt="{{ $recentProduct->name }}"
                                              class="w-12 h-12 rounded-lg object-cover">
                                     @else

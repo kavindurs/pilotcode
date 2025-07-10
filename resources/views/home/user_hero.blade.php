@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         if (property.profile_picture) {
                             const img = document.createElement('img');
-                            img.src = `/storage/${property.profile_picture}`;
+                            img.src = `/storage/app/public/${property.profile_picture}`;
                             img.alt = property.business_name;
                             img.className = 'w-10 h-10 object-cover rounded-md';
                             img.onerror = function() {
