@@ -207,7 +207,7 @@
 
     <!-- Action Buttons -->
     <div class="border-t border-gray-600 pt-6 flex justify-end space-x-3">
-        <button type="button" class="modal-close px-6 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-md transition-colors">
+        <button type="button" onclick="closeModal()" class="px-6 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-md transition-colors">
             Cancel
         </button>
         <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-md transition-colors flex items-center">
@@ -216,5 +216,86 @@
         </button>
     </div>
 </form>
+
+<script>
+// Function to close modal/popup
+function closeModal() {
+    // Try multiple methods to close the modal/popup
+
+    // Method 1: Check if there's a parent modal
+    const modal = document.querySelector('.modal, #editModal, .popup-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        return;
+    }
+
+    // Method 2: Check if this is in an iframe/popup window
+    if (window.parent && window.parent !== window) {
+        window.parent.postMessage('closeModal', '*');
+        return;
+    }
+
+    // Method 3: Check if this is a popup window
+    if (window.opener) {
+        window.close();
+        return;
+    }
+
+    // Method 4: Navigate back in history
+    if (window.history.length > 1) {
+        window.history.back();
+        return;
+    }
+
+    // Method 5: Redirect to admin properties page as fallback
+    window.location.href = '/admin/properties';
+}
+
+// Handle ESC key to close modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+});
+
+// Handle clicks outside the form (if in modal context)
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-backdrop') ||
+        e.target.classList.contains('popup-backdrop')) {
+        closeModal();
+    }
+});
+
+// Initialize subcategory dropdown functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('category_id');
+    const subcategorySelect = document.getElementById('subcategory_id');
+
+    if (categorySelect && subcategorySelect) {
+        categorySelect.addEventListener('change', function() {
+            const categoryId = this.value;
+
+            // Clear subcategory options
+            subcategorySelect.innerHTML = '<option value="">Select Subcategory</option>';
+
+            if (categoryId) {
+                // Fetch subcategories via AJAX
+                fetch(`/api/subcategories/${categoryId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(subcategory => {
+                            const option = document.createElement('option');
+                            option.value = subcategory.id;
+                            option.textContent = subcategory.name;
+                            subcategorySelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error loading subcategories:', error));
+            }
+        });
+    }
+});
+</script>
 
 @endsection

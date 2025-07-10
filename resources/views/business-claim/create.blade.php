@@ -176,8 +176,9 @@
                                 <label for="property_type" class="block text-sm font-semibold text-gray-700">Property Type *</label>
                                 <select id="property_type" name="property_type" required onchange="toggleTypeSpecificFields()"
                                     class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white">
-                                    <option value="web" {{ old('property_type', $property->property_type) == 'web' ? 'selected' : '' }}>🌐 Web Business</option>
-                                    <option value="physical" {{ old('property_type', $property->property_type) == 'physical' ? 'selected' : '' }}>🏢 Physical Business</option>
+                                    <option value="">Select Property Type</option>
+                                    <option value="web" {{ old('property_type') == 'web' ? 'selected' : '' }}>🌐 Web Business</option>
+                                    <option value="physical" {{ old('property_type') == 'physical' ? 'selected' : '' }}>🏢 Physical Business</option>
                                 </select>
                                 @error('property_type')
                                     <p class="text-red-500 text-sm mt-1 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>
@@ -185,7 +186,7 @@
                             </div>
 
                             <!-- Domain field (for web businesses) -->
-                            <div id="domain_field" class="{{ old('property_type', $property->property_type) == 'web' ? '' : 'hidden' }} space-y-2">
+                            <div id="domain_field" class="{{ old('property_type') == 'web' ? '' : 'hidden' }} space-y-2">
                                 <label for="domain" class="block text-sm font-semibold text-gray-700">Website Domain</label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -200,7 +201,7 @@
                             </div>
 
                             <!-- Business Document field (for physical businesses) -->
-                            <div id="document_field" class="{{ old('property_type', $property->property_type) == 'physical' ? '' : 'hidden' }} space-y-2">
+                            <div id="document_field" class="{{ old('property_type') == 'physical' ? '' : 'hidden' }} space-y-2">
                                 <label for="business_document" class="block text-sm font-semibold text-gray-700">Business Document</label>
                                 <div class="relative">
                                     <input type="file" id="business_document" name="business_document" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
@@ -355,7 +356,7 @@
                                 <label for="business_email" class="block text-sm font-semibold text-gray-700">Business Email *</label>
 
                                 <!-- Web Business Email (with domain extension) -->
-                                <div id="web_email_field" class="{{ old('property_type', $property->property_type) == 'web' ? '' : 'hidden' }}">
+                                <div id="web_email_field" class="{{ old('property_type') == 'web' ? '' : 'hidden' }}">
                                     <div class="flex">
                                         <div class="relative flex-1">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -374,7 +375,7 @@
                                 </div>
 
                                 <!-- Physical Business Email (regular input) -->
-                                <div id="physical_email_field" class="{{ old('property_type', $property->property_type) == 'physical' ? '' : 'hidden' }}">
+                                <div id="physical_email_field" class="{{ old('property_type') == 'physical' ? '' : 'hidden' }}">
                                     <div class="relative">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <i class="fas fa-envelope text-gray-400"></i>

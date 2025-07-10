@@ -250,8 +250,8 @@
                         <div class="text-gray-400 text-xs">{{ $property->created_at ? $property->created_at->format('H:i') : '' }}</div>
                     </td>
                     <td class="px-3 py-4 whitespace-nowrap text-sm">
-                        <!-- Single Row with Icon-Only Buttons -->
-                        <div class="flex space-x-1.5">
+                        <!-- Action buttons with consistent alignment -->
+                        <div class="flex items-center space-x-1.5">
                             @if($property->status === 'Not Approved & Not Claimed')
                                 <!-- Approve for Claim Button -->
                                 <form action="{{ route('admin.properties.claim-approve', $property->id) }}" method="POST" class="inline">
@@ -267,27 +267,27 @@
                                         <i class="fas fa-times text-sm"></i>
                                     </button>
                                 </form>
-                            @else
-                                <!-- Placeholder for approved items to maintain alignment -->
-                                <div class="w-8 h-8"></div>
-                                <div class="w-8 h-8"></div>
-                            @endif
-
-                            @if($property->status === 'Not Approved & Not Claimed' || $property->status === 'Not Claimed')
                                 <!-- Claim Property Button -->
                                 <button onclick="claimProperty({{ $property->id }})" title="Claim Property" class="bg-purple-600 hover:bg-purple-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
                                     <i class="fas fa-hand-holding text-sm"></i>
                                 </button>
+                            @elseif($property->status === 'Not Claimed')
+                                <!-- Claim Property Button -->
+                                <button onclick="claimProperty({{ $property->id }})" title="Claim Property" class="bg-purple-600 hover:bg-purple-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                    <i class="fas fa-hand-holding text-sm"></i>
+                                </button>
+                                <!-- Edit Button -->
+                                <button type="button" data-edit-url="{{ route('admin.properties.claim-edit', $property->id) }}" title="Edit" class="btn-edit bg-blue-600 hover:bg-blue-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                    <i class="fas fa-edit text-sm"></i>
+                                </button>
                             @else
-                                <div class="w-8 h-8"></div>
+                                <!-- Edit Button for other statuses -->
+                                <button type="button" data-edit-url="{{ route('admin.properties.claim-edit', $property->id) }}" title="Edit" class="btn-edit bg-blue-600 hover:bg-blue-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                    <i class="fas fa-edit text-sm"></i>
+                                </button>
                             @endif
 
-                            <!-- Edit Button -->
-                            <button type="button" data-edit-url="{{ route('admin.properties.claim-edit', $property->id) }}" title="Edit" class="btn-edit bg-blue-600 hover:bg-blue-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
-                                <i class="fas fa-edit text-sm"></i>
-                            </button>
-
-                            <!-- Delete Button -->
+                            <!-- Delete Button - always present -->
                             <form action="{{ route('admin.properties.claim-destroy', $property->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this property?');" class="inline">
                                 @csrf
                                 @method('DELETE')
@@ -455,13 +455,27 @@ function claimProperty(propertyId) {
                 modalBody.innerHTML = html;
                 modal.classList.remove('hidden');
 
-                console.log('Claim modal loaded successfully, initializing subcategory dropdown...');
+                console.log('Claim modal loaded successfully, initializing form functionality...');
                 // Initialize subcategory functionality after modal content is loaded
                 initializeSubcategoryDropdown();
+
+                // Initialize property type handler if the function exists
+                if (typeof initializePropertyTypeHandler === 'function') {
+                    initializePropertyTypeHandler();
+                }
             })
             .catch(error => console.error('Error loading claim form:', error));
     }
 }
+
+// Global function to close modal
+function closeModal() {
+    const modal = document.getElementById('editModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function(){
     const modal = document.getElementById('editModal');
     const modalBody = document.getElementById('modalBody');
@@ -470,6 +484,10 @@ document.addEventListener("DOMContentLoaded", function(){
     document.querySelectorAll('.btn-edit').forEach(button => {
         button.addEventListener('click', function(){
             const editUrl = this.getAttribute('data-edit-url');
+
+            // Reset modal title for edit action
+            document.querySelector('#editModal h3').innerHTML = '<i class="fas fa-edit text-red-400 mr-2"></i>Edit Property';
+
             // Load the edit form via AJAX
             fetch(editUrl)
                 .then(response => response.text())
@@ -477,9 +495,14 @@ document.addEventListener("DOMContentLoaded", function(){
                     modalBody.innerHTML = html;
                     modal.classList.remove('hidden');
 
-                    console.log('Modal loaded successfully, initializing subcategory dropdown...');
+                    console.log('Edit modal loaded successfully, initializing form functionality...');
                     // Initialize subcategory functionality after modal content is loaded
                     initializeSubcategoryDropdown();
+
+                    // Initialize property type handler if the function exists
+                    if (typeof initializePropertyTypeHandler === 'function') {
+                        initializePropertyTypeHandler();
+                    }
                 })
                 .catch(error => console.error('Error loading edit form:', error));
         });
@@ -487,18 +510,16 @@ document.addEventListener("DOMContentLoaded", function(){
 
     closeModalButtons.forEach(btn => {
         btn.addEventListener('click', function(){
-            modal.classList.add('hidden');
+            closeModal();
         });
     });
 
-    // Optionally, close modal when clicking outside the modal content
+    // Close modal when clicking outside the modal content
     window.addEventListener('click', function(e) {
         if(e.target === modal) {
-            modal.classList.add('hidden');
+            closeModal();
         }
     });
-
-
 });
 </script>
 @endsection

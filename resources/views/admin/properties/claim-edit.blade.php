@@ -96,7 +96,7 @@
             @enderror
         </div>
 
-        <!-- Domain (for web businesses) -->
+        <!-- Domain/Document Field - Dynamic based on Property Type -->
         <div id="domain-field" style="display: {{ $property->property_type === 'web' ? 'block' : 'none' }}">
             <label for="domain" class="block text-sm font-medium text-gray-300">Domain</label>
             <input type="url" name="domain" id="domain" value="{{ old('domain', $property->domain) }}"
@@ -107,7 +107,6 @@
             @enderror
         </div>
 
-        <!-- Document (for physical businesses) -->
         <div id="document-field" style="display: {{ $property->property_type === 'physical' ? 'block' : 'none' }}">
             <label for="document" class="block text-sm font-medium text-gray-300">Business Document</label>
             @if($property->document_path)
@@ -233,7 +232,7 @@
 
     <!-- Form Footer -->
     <div class="flex justify-end space-x-3 pt-6 border-t border-gray-600">
-        <button type="button" class="modal-close px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
             Cancel
         </button>
         <button type="submit"
@@ -244,71 +243,145 @@
 </form>
 
 <script>
+// Function to close modal
+function closeModal() {
+    const modal = document.getElementById('editModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
 // Handle property type change to show/hide domain and document fields
-document.getElementById('property_type').addEventListener('change', function() {
-    const propertyType = this.value;
+function togglePropertyFields() {
+    const propertyTypeSelect = document.getElementById('property_type');
     const domainField = document.getElementById('domain-field');
     const documentField = document.getElementById('document-field');
+
+    console.log('togglePropertyFields called');
+    console.log('Property type select:', propertyTypeSelect);
+    console.log('Domain field:', domainField);
+    console.log('Document field:', documentField);
+
+    if (!propertyTypeSelect || !domainField || !documentField) {
+        console.log('Elements not found, retrying in 500ms...');
+        setTimeout(togglePropertyFields, 500);
+        return;
+    }
+
+    const propertyType = propertyTypeSelect.value;
+    console.log('Property type changed to:', propertyType);
 
     if (propertyType === 'web') {
         domainField.style.display = 'block';
         documentField.style.display = 'none';
+        console.log('✅ Showing domain field, hiding document field');
     } else if (propertyType === 'physical') {
         domainField.style.display = 'none';
         documentField.style.display = 'block';
+        console.log('✅ Hiding domain field, showing document field');
     } else {
         domainField.style.display = 'none';
         documentField.style.display = 'none';
+        console.log('✅ Hiding both fields');
     }
-});
+}
+
+// Initialize property type functionality
+function initializePropertyTypeHandler() {
+    console.log('🔄 Initializing property type handler...');
+
+    const propertyTypeSelect = document.getElementById('property_type');
+    if (propertyTypeSelect) {
+        // Remove any existing event listeners to prevent duplicates
+        propertyTypeSelect.removeEventListener('change', togglePropertyFields);
+
+        // Add new event listener
+        propertyTypeSelect.addEventListener('change', function() {
+            console.log('🔄 Property type dropdown changed');
+            togglePropertyFields();
+        });
+
+        // Initialize on page load
+        togglePropertyFields();
+
+        console.log('✅ Property type handler initialized successfully');
+    } else {
+        console.error('❌ Property type select element not found!');
+        // Retry after a short delay
+        setTimeout(initializePropertyTypeHandler, 300);
+    }
+}
+
+// Initialize when this script loads (for modal context)
+setTimeout(function() {
+    console.log('🚀 Starting initialization...');
+    initializePropertyTypeHandler();
+
+    // Initialize subcategory dropdown functionality if the function exists
+    if (typeof initializeSubcategoryDropdown === 'function') {
+        console.log('🚀 Initializing subcategory dropdown...');
+        initializeSubcategoryDropdown();
+    }
+}, 200);
+
+// Also try again after a longer delay to ensure everything is loaded
+setTimeout(function() {
+    console.log('🔄 Secondary initialization attempt...');
+    initializePropertyTypeHandler();
+}, 1000);
 
 // Handle AJAX form submission for modal
-document.getElementById('claimEditForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+document.addEventListener('DOMContentLoaded', function() {
+    // Use event delegation for form submission since the form is loaded dynamically
+    document.addEventListener('submit', function(e) {
+        if (e.target && e.target.id === 'claimEditForm') {
+            e.preventDefault();
 
-    const form = this;
-    const formData = new FormData(form);
-    const submitButton = form.querySelector('button[type="submit"]');
-    const originalButtonText = submitButton.textContent;
+            const form = e.target;
+            const formData = new FormData(form);
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
 
-    // Show loading state
-    submitButton.disabled = true;
-    submitButton.textContent = 'Updating...';
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.textContent = 'Updating...';
 
-    // Set CSRF token header
-    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            // Set CSRF token header
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': token
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': token
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    alert('Property updated successfully!');
+
+                    // Close modal
+                    closeModal();
+
+                    // Reload page to show updated data
+                    location.reload();
+                } else {
+                    alert('Error updating property: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating property. Please try again.');
+            })
+            .finally(() => {
+                // Reset button state
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
+            });
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success message
-            alert('Property updated successfully!');
-
-            // Close modal
-            document.getElementById('editModal').classList.add('hidden');
-
-            // Reload page to show updated data
-            location.reload();
-        } else {
-            alert('Error updating property: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error updating property. Please try again.');
-    })
-    .finally(() => {
-        // Reset button state
-        submitButton.disabled = false;
-        submitButton.textContent = originalButtonText;
     });
 });
 </script>
