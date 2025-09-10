@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Plan;
 use App\Models\Payment;
 use App\Models\Property;
+use App\Models\User;
 use App\Services\GenieBusinessPaymentService;
 use Illuminate\Support\Facades\Log;
 
@@ -246,6 +247,19 @@ class PlanPaymentController extends Controller
             $property->update([
                 'plan_id' => $payment->plan_id
             ]);
+
+            // Process 3-level referral earnings for plan purchase
+            if ($property->user_id) {
+                $user = User::find($property->user_id);
+                if ($user && $user->referred_by) {
+                    \App\Http\Controllers\ReferralController::process3LevelReferralEarnings(
+                        $user,
+                        $property->id,
+                        $payment->plan_id,
+                        $payment->amount / 3 // Convert back to original amount
+                    );
+                }
+            }
 
             Log::info('Property plan updated after successful payment', [
                 'property_id' => $property->id,

@@ -17,11 +17,30 @@
             </select>
         </div>
         <div>
-            <label class="block text-gray-300 text-sm font-medium mb-2">Status</label>
-            <select name="status" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="Not Approved" {{ old('status', $property->status) === 'Not Approved' ? 'selected' : '' }}>Not Approved</option>
-                <option value="Approved" {{ old('status', $property->status) === 'Approved' ? 'selected' : '' }}>Approved</option>
-            </select>
+            @if($canEditStatus)
+                <label class="block text-gray-300 text-sm font-medium mb-2">
+                    Status
+                    <span class="ml-2 px-2 py-1 text-xs bg-orange-600 text-white rounded-full">Admin Only</span>
+                </label>
+                <select name="status" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                    <option value="Not Approved" {{ old('status', $property->status) === 'Not Approved' ? 'selected' : '' }}>Not Approved</option>
+                    <option value="Approved" {{ old('status', $property->status) === 'Approved' ? 'selected' : '' }}>Approved</option>
+                </select>
+                <p class="text-gray-400 text-sm mt-1">
+                    <i class="fas fa-shield-alt mr-1"></i>
+                    Only administrators can change property status.
+                </p>
+            @else
+                <label class="block text-gray-300 text-sm font-medium mb-2">Status</label>
+                <div class="w-full p-3 bg-gray-600 border border-gray-500 rounded-md text-gray-300 cursor-not-allowed">
+                    {{ $property->status }}
+                    <span class="ml-2 px-2 py-1 text-xs bg-gray-500 text-gray-300 rounded-full">Read Only</span>
+                </div>
+                <p class="text-gray-400 text-sm mt-1">
+                    <i class="fas fa-lock mr-1"></i>
+                    You don't have permission to change the status. Contact an administrator.
+                </p>
+            @endif
         </div>
     </div>
 
@@ -184,6 +203,29 @@
             </div>
         </div>
     </div>
+
+    <!-- Security Settings (Admin/Super Admin Only) -->
+    @if($canEditPassword)
+    <div class="border-t border-gray-600 pt-6">
+        <h3 class="text-lg font-medium text-white mb-4 flex items-center">
+            <i class="fas fa-lock text-red-400 mr-2"></i>
+            Security Settings
+            <span class="ml-2 px-2 py-1 text-xs bg-red-600 text-white rounded-full">Admin Only</span>
+        </h3>
+        <div class="grid grid-cols-1 gap-4">
+            <div>
+                <label class="block text-gray-300 text-sm font-medium mb-2">New Password</label>
+                <input type="password" name="password"
+                       class="w-full p-3 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                       placeholder="Leave empty to keep current password">
+                <p class="text-gray-400 text-sm mt-1">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Only administrators can change property passwords. Leave empty to keep the current password.
+                </p>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- Additional Information -->
     <div class="border-t border-gray-600 pt-6">

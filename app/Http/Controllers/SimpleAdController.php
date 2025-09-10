@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ad;
 use App\Models\Property;
+use App\Models\User;
 use App\Models\AdminSetting;
 use App\Services\GenieBusinessPaymentService;
 use Illuminate\Http\Request;
@@ -315,6 +316,19 @@ class SimpleAdController extends Controller
                 ])
             ]);
 
+            // Process 3-level referral earnings for sandbox payment
+            if ($ad->user_id) {
+                $user = User::find($ad->user_id);
+                if ($user && $user->referred_by) {
+                    \App\Http\Controllers\ReferralController::process3LevelReferralEarnings(
+                        $user,
+                        $ad->property_id,
+                        $ad->plan_id,
+                        $ad->amount
+                    );
+                }
+            }
+
             return redirect()->route('property.ads.index')
                 ->with('success', 'Payment completed successfully! Your promotion request has been submitted for admin review. (Sandbox Mode)');
         }
@@ -366,6 +380,19 @@ class SimpleAdController extends Controller
                     'status' => 'pending', // Now ready for admin review
                     'payment_notes' => json_encode($paymentResult['data'])
                 ]);
+
+                // Process 3-level referral earnings
+                if ($ad->user_id) {
+                    $user = User::find($ad->user_id);
+                    if ($user && $user->referred_by) {
+                        \App\Http\Controllers\ReferralController::process3LevelReferralEarnings(
+                            $user,
+                            $ad->property_id,
+                            $ad->plan_id,
+                            $ad->amount
+                        );
+                    }
+                }
 
                 Log::info('Ad status updated to paid', [
                     'ad_id' => $ad->id,
@@ -491,6 +518,19 @@ class SimpleAdController extends Controller
                         'status' => 'pending',
                         'payment_notes' => json_encode($existingPaymentResult['data'])
                     ]);
+
+                    // Process 3-level referral earnings
+                    if ($ad->user_id) {
+                        $user = User::find($ad->user_id);
+                        if ($user && $user->referred_by) {
+                            \App\Http\Controllers\ReferralController::process3LevelReferralEarnings(
+                                $user,
+                                $ad->property_id,
+                                $ad->plan_id,
+                                $ad->amount
+                            );
+                        }
+                    }
 
                     return redirect()->route('property.ads.index')
                         ->with('success', 'Payment found and verified! Your promotion request has been submitted for admin review.');
@@ -633,6 +673,19 @@ class SimpleAdController extends Controller
                     'payment_notes' => json_encode($paymentData)
                 ]);
 
+                // Process 3-level referral earnings
+                if ($ad->user_id) {
+                    $user = User::find($ad->user_id);
+                    if ($user && $user->referred_by) {
+                        \App\Http\Controllers\ReferralController::process3LevelReferralEarnings(
+                            $user,
+                            $ad->property_id,
+                            $ad->plan_id,
+                            $ad->amount
+                        );
+                    }
+                }
+
                 Log::info('Manual payment verification successful', [
                     'ad_id' => $ad->id,
                     'transaction_id' => $transactionId,
@@ -674,6 +727,19 @@ class SimpleAdController extends Controller
                         'status' => 'pending',
                         'payment_notes' => json_encode($result['data'])
                     ]);
+
+                    // Process 3-level referral earnings
+                    if ($ad->user_id) {
+                        $user = User::find($ad->user_id);
+                        if ($user && $user->referred_by) {
+                            \App\Http\Controllers\ReferralController::process3LevelReferralEarnings(
+                                $user,
+                                $ad->property_id,
+                                $ad->plan_id,
+                                $ad->amount
+                            );
+                        }
+                    }
 
                     Log::info('Auto-updated payment status', [
                         'ad_id' => $ad->id,

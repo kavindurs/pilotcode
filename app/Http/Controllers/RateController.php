@@ -13,8 +13,24 @@ class RateController extends Controller
         return view('rates.create', compact('property'));
     }
 
-    public function store(Request $request, Property $property)
+    public function store(Request $request, Property $property = null)
     {
+        // Handle case where property might not be bound correctly
+        if (!$property && $request->has('property_id')) {
+            $property = Property::find($request->input('property_id'));
+        }
+
+        if (!$property) {
+            return redirect()->back()->with('error', 'Property not found.');
+        }
+
+        // Debug information
+        \Log::info('Rate store called', [
+            'property_id' => $property->id,
+            'request_data' => $request->all(),
+            'url' => $request->fullUrl()
+        ]);
+
         $validated = $request->validate([
             'rate' => 'required|integer|between:1,5',
             'review' => 'required|string|max:250',

@@ -22,7 +22,17 @@ class PropertyController extends Controller
             ->orderByRaw("CASE WHEN status = 'Not Approved' THEN 0 ELSE 1 END")
             ->paginate(10);
 
-        return view('admin.properties.index', compact('properties', 'tab'));
+        // Check if current admin has full permissions (only admin and super_admin)
+        $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+        $hasFullPermissions = $admin && in_array($admin->role, ['admin', 'super_admin']);
+
+        // Check if current admin can add new properties (allow for worker/other roles too)
+        $canAddProperty = $admin !== null;
+
+        // Check if current admin can edit properties (disabled for worker/other roles)
+        $canEditProperties = $admin && in_array($admin->role, ['admin', 'super_admin']);
+
+        return view('admin.properties.index', compact('properties', 'tab', 'hasFullPermissions', 'canAddProperty', 'canEditProperties'));
     }
 
     public function approve($id)
@@ -49,6 +59,118 @@ class PropertyController extends Controller
         return redirect()->route('admin.properties.index')->with('success', 'Property rejected and email sent.');
     }
 
+    public function create()
+    {
+        $categories = \App\Models\Category::where('is_active', true)->orderBy('name')->get();
+        $subcategories = \App\Models\Subcategory::where('is_active', true)->orderBy('name')->get();
+        $plans = \App\Models\Plan::all();
+
+        // Check if current admin can set approved status
+        $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+        $canSetApproved = $admin && in_array($admin->role, ['admin', 'super_admin']);
+
+        return view('admin.properties.create', compact('categories', 'subcategories', 'plans', 'canSetApproved'));
+    }
+
+    public function store(Request $request)
+    {
+        // Get current admin for role checking
+        $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+
+        // Build validation rules based on admin role
+        $validationRules = [
+            'property_type' => 'required|in:web,physical',
+            'business_name' => 'required|string|max:255',
+            'business_email' => 'required|email|unique:properties,business_email',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'password' => 'required|string|min:8',
+            'city' => 'required|string|max:255',
+            'country' => 'required|string|max:255',
+            'zip_code' => 'nullable|string|max:20',
+            'category_id' => 'nullable|exists:categories,id',
+            'subcategory_id' => 'nullable|exists:subcategories,id',
+            'category_text' => 'nullable|string|max:255',
+            'subcategory_text' => 'nullable|string|max:255',
+            'annual_revenue' => 'required|string',
+            'employee_count' => 'required|string',
+            'domain' => 'nullable|string|max:255',
+            'document' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
+            'referred_by' => 'nullable|string|max:255',
+            'plan_id' => 'nullable|integer',
+            'profile_picture' => 'nullable|image|max:2048',
+        ];
+
+        // Add status validation based on admin role
+        if ($admin && in_array($admin->role, ['admin', 'super_admin'])) {
+            $validationRules['status'] = 'required|in:Not Approved & Not Claimed,Approved,Not Claimed';
+        } else {
+            $validationRules['status'] = 'required|in:Not Approved & Not Claimed';
+        }
+
+        // Validate the request
+        $validatedData = $request->validate($validationRules);
+
+        // Prevent non-admin/super_admin users from setting status to 'Approved' or 'Not Claimed'
+        if (in_array($request->status, ['Approved', 'Not Claimed']) && !($admin && in_array($admin->role, ['admin', 'super_admin']))) {
+            return back()->withErrors(['status' => 'You do not have permission to set status to Approved or Not Claimed.'])->withInput();
+        }
+
+        // Fields below don't exist in database - commented out
+        // 'office_address' => 'nullable|string|max:500',
+        // 'website_url' => 'nullable|url|max:255',
+        // 'twitter' => 'nullable|string|max:255',
+        // 'facebook' => 'nullable|string|max:255',
+        // 'linkedin' => 'nullable|string|max:255',
+        // 'business_description' => 'nullable|string|max:1000',
+        // 'contact_phone' => 'nullable|string|max:20',
+
+        // Handle document upload
+        if ($request->hasFile('document')) {
+            $documentPath = $request->file('document')->store('documents', 'public');
+            $validatedData['document_path'] = $documentPath;
+        }
+
+        // Handle profile picture upload
+        if ($request->hasFile('profile_picture')) {
+            $profilePicturePath = $request->file('profile_picture')->store('profile_pictures', 'public');
+            $validatedData['profile_picture'] = $profilePicturePath;
+        }
+
+        // Handle category - use dropdown selection first, then text input
+        if ($validatedData['category_id']) {
+            $validatedData['category'] = $validatedData['category_id'];
+        } elseif ($validatedData['category_text']) {
+            $validatedData['category'] = $validatedData['category_text'];
+        } else {
+            return back()->withErrors(['category_id' => 'Either select a category or type a category name.'])->withInput();
+        }
+
+        // Handle subcategory - use dropdown selection first, then text input
+        if ($validatedData['subcategory_id']) {
+            $validatedData['subcategory'] = $validatedData['subcategory_id'];
+        } elseif ($validatedData['subcategory_text']) {
+            $validatedData['subcategory'] = $validatedData['subcategory_text'];
+        } else {
+            return back()->withErrors(['subcategory_id' => 'Either select a subcategory or type a subcategory name.'])->withInput();
+        }
+
+        // Remove the ID fields that aren't stored in database
+        unset($validatedData['category_id']);
+        unset($validatedData['subcategory_id']);
+        unset($validatedData['category_text']);
+        unset($validatedData['subcategory_text']);
+
+        // Hash the password
+        $validatedData['password'] = bcrypt($validatedData['password']);
+
+        // Create the property
+        $property = Property::create($validatedData);
+
+        return redirect()->route('admin.properties.index')
+            ->with('success', 'Property created successfully!');
+    }
+
     public function show($id)
     {
         $property = Property::findOrFail($id);
@@ -61,17 +183,21 @@ class PropertyController extends Controller
         $categories = \App\Models\Category::where('is_active', true)->orderBy('name')->get();
         $subcategories = \App\Models\Subcategory::where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.properties.edit', compact('property', 'categories', 'subcategories'));
+        // Check if current admin can edit passwords and status
+        $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+        $canEditPassword = $admin && in_array($admin->role, ['admin', 'super_admin']);
+        $canEditStatus = $admin && in_array($admin->role, ['admin', 'super_admin']);
+
+        return view('admin.properties.edit', compact('property', 'categories', 'subcategories', 'canEditPassword', 'canEditStatus'));
     }
 
     public function update(Request $request, $property)
     {
         $property = Property::findOrFail($property);
 
-        // Validate the request
-        $validatedData = $request->validate([
+        // Build validation rules array
+        $validationRules = [
             'property_type' => 'required|in:web,physical',
-            'status' => 'required|in:Not Approved,Approved',
             'business_name' => 'required|string|max:255',
             'business_email' => 'required|email',
             'first_name' => 'required|string|max:255',
@@ -87,7 +213,23 @@ class PropertyController extends Controller
             'document' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
             'referred_by' => 'nullable|string|max:255',
             'plan_id' => 'nullable|integer',
-        ]);
+        ];
+
+        // Get current admin for role checking
+        $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+
+        // Add status validation only if the user has admin or super_admin role
+        if ($admin && in_array($admin->role, ['admin', 'super_admin'])) {
+            $validationRules['status'] = 'required|in:Not Approved,Approved';
+        }
+
+        // Add password validation only if the user has admin or super_admin role
+        if ($admin && in_array($admin->role, ['admin', 'super_admin'])) {
+            $validationRules['password'] = 'nullable|string|min:6';
+        }
+
+        // Validate the request
+        $validatedData = $request->validate($validationRules);
 
         // Convert category_id to category ID for database storage
         if ($request->filled('category_id')) {
@@ -99,6 +241,20 @@ class PropertyController extends Controller
         if ($request->filled('subcategory_id')) {
             $validatedData['subcategory'] = $request->subcategory_id;
             unset($validatedData['subcategory_id']);
+        }
+
+        // Handle status update (only for admin and super_admin roles)
+        if (!($admin && in_array($admin->role, ['admin', 'super_admin']))) {
+            // Remove status from validated data if not authorized - keep current status
+            unset($validatedData['status']);
+        }
+
+        // Handle password update (only for admin and super_admin roles)
+        if ($admin && in_array($admin->role, ['admin', 'super_admin']) && $request->filled('password')) {
+            $validatedData['password'] = bcrypt($request->password);
+        } else {
+            // Remove password from validated data if not authorized or empty
+            unset($validatedData['password']);
         }
 
         // Handle file upload
@@ -172,7 +328,13 @@ class PropertyController extends Controller
             $this->addCategoryActiveStatus($property);
         }
 
-        return view('admin.properties.claim-index', compact('properties', 'tab', 'search'));
+        // Check permissions for claim business page
+        $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+        $hasFullPermissions = $admin && in_array($admin->role, ['admin', 'super_admin']);
+        $canAddProperty = $admin !== null; // All admin users can add
+        $canEdit = $admin !== null; // All admin users can edit
+
+        return view('admin.properties.claim-index', compact('properties', 'tab', 'search', 'hasFullPermissions', 'canAddProperty', 'canEdit'));
     }
 
     /**
@@ -305,19 +467,25 @@ class PropertyController extends Controller
         // Check if this is a claim action
         $isClaim = $request->query('claim') === 'true';
 
+        // Check if current admin can edit passwords and status
+        $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+        $canEditPassword = $admin && in_array($admin->role, ['admin', 'super_admin']);
+        $canEditStatus = $admin && in_array($admin->role, ['admin', 'super_admin']);
+
         // If AJAX request, return just the form content
         if ($request->ajax()) {
-            return view('admin.properties.claim-edit-form', compact('property', 'categories', 'subcategories', 'isClaim'));
+            return view('admin.properties.claim-edit-form', compact('property', 'categories', 'subcategories', 'isClaim', 'canEditPassword', 'canEditStatus'));
         }
 
-        return view('admin.properties.claim-edit', compact('property', 'categories', 'subcategories', 'isClaim'));
+        return view('admin.properties.claim-edit', compact('property', 'categories', 'subcategories', 'isClaim', 'canEditPassword', 'canEditStatus'));
     }
 
     public function claimUpdate(Request $request, $id)
     {
         $property = Property::findOrFail($id);
 
-        $validatedData = $request->validate([
+        // Build validation rules array
+        $validationRules = [
             'business_name' => 'required|string|max:255',
             'business_email' => 'required|email|max:255',
             'property_type' => 'required|in:web,physical',
@@ -330,11 +498,24 @@ class PropertyController extends Controller
             'employee_count' => 'nullable|string|max:255',
             'category' => 'required|string|max:255',
             'subcategory' => 'required|string|max:255',
-            'status' => 'required|in:Not Approved,Approved,Rejected,Not Claimed,Not Approved & Not Claimed,Not Claimed & Rejected',
-            'password' => 'nullable|string|min:6',
             'domain' => 'nullable|url|max:255',
             'document' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
-        ]);
+        ];
+
+        // Get current admin for role checking
+        $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+
+        // Add status validation only if the user has admin or super_admin role
+        if ($admin && in_array($admin->role, ['admin', 'super_admin'])) {
+            $validationRules['status'] = 'required|in:Not Approved,Approved,Rejected,Not Claimed,Not Approved & Not Claimed,Not Claimed & Rejected';
+        }
+
+        // Add password validation only if the user has admin or super_admin role
+        if ($admin && in_array($admin->role, ['admin', 'super_admin'])) {
+            $validationRules['password'] = 'nullable|string|min:6';
+        }
+
+        $validatedData = $request->validate($validationRules);
 
         // Look up category and subcategory IDs by their names or IDs
         if (is_numeric($validatedData['category'])) {
@@ -358,10 +539,17 @@ class PropertyController extends Controller
         $validatedData['category'] = $categoryId;
         $validatedData['subcategory'] = $subcategoryId;
 
-        // Handle password update if provided
-        if ($request->filled('password')) {
+        // Handle status update (only for admin and super_admin roles)
+        if (!($admin && in_array($admin->role, ['admin', 'super_admin']))) {
+            // Remove status from validated data if not authorized - keep current status
+            unset($validatedData['status']);
+        }
+
+        // Handle password update (only for admin and super_admin roles)
+        if ($admin && in_array($admin->role, ['admin', 'super_admin']) && $request->filled('password')) {
             $validatedData['password'] = bcrypt($request->password);
         } else {
+            // Remove password from validated data if not authorized or empty
             unset($validatedData['password']);
         }
 
@@ -379,7 +567,7 @@ class PropertyController extends Controller
         $property->update($validatedData);
 
         // Check if this is a claim action (status changed to "Approved" with new login credentials)
-        if ($validatedData['status'] === 'Approved' && $request->filled('password')) {
+        if (isset($validatedData['status']) && $validatedData['status'] === 'Approved' && $request->filled('password')) {
             // Extract original email (remove system-generated numbers)
             $originalEmail = $this->cleanEmailAddress($property->business_email);
 

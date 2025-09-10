@@ -38,6 +38,11 @@
                   enctype="multipart/form-data">
                 @csrf
 
+                {{-- Hidden referral field --}}
+                @if(request('ref'))
+                    <input type="hidden" name="ref" value="{{ request('ref') }}">
+                @endif
+
                 {{-- Add error messages display --}}
                 @if ($errors->any())
                     <div class="bg-red-50 text-red-500 p-4 rounded-md">

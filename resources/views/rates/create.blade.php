@@ -10,8 +10,9 @@
             </div>
         </div>
 
-        <form action="{{ route('rate.store', $property) }}" method="POST" class="space-y-8">
+        <form action="{{ route('rate.store', $property->id) }}" method="POST" class="space-y-8" id="reviewForm">
             @csrf
+            <input type="hidden" name="property_id" value="{{ $property->id }}">
 
             <!-- Rating Section -->
             <div class="space-y-4">
@@ -144,6 +145,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (initialRating) {
         updateStars(parseInt(initialRating.value));
     }
+
+    // Ensure form action doesn't get modified
+    const form = document.getElementById('reviewForm');
+    const originalAction = form.action;
+
+    form.addEventListener('submit', function(e) {
+        // Ensure we're submitting to the correct URL
+        if (form.action !== originalAction) {
+            console.warn('Form action was modified, restoring:', originalAction);
+            form.action = originalAction;
+        }
+    });
 });
 </script>
 @endpush

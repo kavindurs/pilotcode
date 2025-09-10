@@ -1,10 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Http\Controllers\ProfileController;
 Route::get('/property/dashboard', function () {
     // Ensure the property owner is logged in
@@ -130,6 +132,7 @@ Route::middleware('auth')->group(function () {
 
 // Category Routes
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+Route::get('/categories/subcategories', [CategoryController::class, 'getSubcategories'])->name('categories.subcategories');
 Route::get('/subcategories/{slug}', [CategoryController::class, 'showSubcategory'])->name('subcategories.show');
 
 // Property Routes
@@ -282,9 +285,34 @@ Route::get('/properties/subcategory/{subcategory}', [PropertyController::class, 
 Route::get('/properties', [PropertyController::class, 'index'])->name('property.properties');
 
 Route::middleware(['auth'])->group(function () {
-    Route::post('/rate', [RateController::class, 'store'])->name('rate.store');
     Route::get('/rate/{property}', [RateController::class, 'create'])->name('rate.create');
-    Route::post('/rate/{property}', [RateController::class, 'store'])->name('rate.property.store');
+    Route::post('/rate/{property}', [RateController::class, 'store'])->name('rate.store');
+
+    // Alternative route for cases where property_id is sent as form data
+    Route::post('/rate', function(Request $request) {
+        if ($request->has('property_id')) {
+            $property = \App\Models\Property::find($request->input('property_id'));
+            if ($property) {
+                return app(\App\Http\Controllers\RateController::class)->store($request, $property);
+            }
+        }
+
+        return response()->json([
+            'error' => 'Invalid rate route access',
+            'method' => $request->method(),
+            'message' => 'Property ID is required'
+        ], 400);
+    });
+});
+
+// Debug route for invalid rate access (only for GET requests)
+Route::get('/rate', function(Request $request) {
+    return response()->json([
+        'error' => 'Invalid rate route access',
+        'method' => $request->method(),
+        'url' => $request->fullUrl(),
+        'message' => 'Rate routes require property ID in path: /rate/{property_id}'
+    ], 404);
 });
 
 // Admin login routes
@@ -293,48 +321,63 @@ Route::prefix('admin')->group(function () {
     Route::post('login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
-    // Dashboard Route
-    Route::get('dashboard', [AdminDashboardController::class, 'index'])
+    // Dashboard Route - redirect workers to properties, restrict to admin/super_admin only
+    Route::get('dashboard', function() {
+        $admin = Auth::guard('admin')->user();
+        if ($admin->role === 'worker') {
+            return redirect()->route('admin.properties.index')
+                ->with('info', 'Welcome! You have been redirected to the properties section as that is your assigned area.');
+        }
+        return app(AdminDashboardController::class)->index();
+    })
          ->name('admin.dashboard')
-         ->middleware('auth:admin');
+         ->middleware(['auth:admin']);
 
-    // Analytics Route
+    // Analytics Route - restricted to admin/super_admin only
     Route::get('analytics', [\App\Http\Controllers\Admin\AnalyticsController::class, 'index'])
          ->name('admin.analytics')
-         ->middleware('auth:admin');
+         ->middleware(['auth:admin', 'admin.role:admin,super_admin']);
 
-    // Users Management
+    // Users Management - restricted to admin/super_admin only
     Route::get('users', [\App\Http\Controllers\Admin\UserController::class, 'index'])
          ->name('admin.users.index')
-         ->middleware('auth:admin');
+         ->middleware(['auth:admin', 'admin.role:admin,super_admin']);
 
     Route::get('users/{id}', [\App\Http\Controllers\Admin\UserController::class, 'show'])
          ->name('admin.users.show')
-         ->middleware('auth:admin');
+         ->middleware(['auth:admin', 'admin.role:admin,super_admin']);
 
     Route::get('users/{id}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit'])
          ->name('admin.users.edit')
-         ->middleware('auth:admin');
+         ->middleware(['auth:admin', 'admin.role:admin,super_admin']);
 
     Route::put('users/{id}', [\App\Http\Controllers\Admin\UserController::class, 'update'])
          ->name('admin.users.update')
-         ->middleware('auth:admin');
+         ->middleware(['auth:admin', 'admin.role:admin,super_admin']);
 
     Route::delete('users/{id}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])
          ->name('admin.users.destroy')
-         ->middleware('auth:admin');
+         ->middleware(['auth:admin', 'admin.role:admin,super_admin']);
 
     Route::post('users/{id}/verify', [\App\Http\Controllers\Admin\UserController::class, 'verify'])
          ->name('admin.users.verify')
-         ->middleware('auth:admin');
+         ->middleware(['auth:admin', 'admin.role:admin,super_admin']);
 
     Route::post('users/{id}/unverify', [\App\Http\Controllers\Admin\UserController::class, 'unverify'])
          ->name('admin.users.unverify')
-         ->middleware('auth:admin');
+         ->middleware(['auth:admin', 'admin.role:admin,super_admin']);
 
     // Properties management routes
     Route::get('properties', [\App\Http\Controllers\Admin\PropertyController::class, 'index'])
          ->name('admin.properties.index')
+         ->middleware('auth:admin');
+
+    Route::get('properties/create', [\App\Http\Controllers\Admin\PropertyController::class, 'create'])
+         ->name('admin.properties.create')
+         ->middleware('auth:admin');
+
+    Route::post('properties', [\App\Http\Controllers\Admin\PropertyController::class, 'store'])
+         ->name('admin.properties.store')
          ->middleware('auth:admin');
 
     Route::get('properties/{property}', [\App\Http\Controllers\Admin\PropertyController::class, 'show'])
@@ -643,6 +686,19 @@ Route::prefix('admin')->group(function () {
          ->name('admin.referrals.update-rate')
          ->middleware('auth:admin');
 
+    // Referral Rates Management
+    Route::post('referrals/rates/update', [\App\Http\Controllers\Admin\ReferralController::class, 'updateRates'])
+         ->name('admin.referrals.rates.update')
+         ->middleware('auth:admin');
+
+    Route::post('referrals/rates/store', [\App\Http\Controllers\Admin\ReferralController::class, 'storeRate'])
+         ->name('admin.referrals.rates.store')
+         ->middleware('auth:admin');
+
+    Route::delete('referrals/rates/{id}', [\App\Http\Controllers\Admin\ReferralController::class, 'destroyRate'])
+         ->name('admin.referrals.rates.destroy')
+         ->middleware('auth:admin');
+
     // Staff Management
     Route::get('staff', [\App\Http\Controllers\Admin\StaffController::class, 'index'])
          ->name('admin.staff.index')
@@ -928,9 +984,15 @@ Route::post('/properties', [App\Http\Controllers\PropertyController::class, 'sto
 
 Route::get('/api/subcategories/{categoryId}', function($categoryId) {
     try {
-        // Use raw query builder for reliability
-        $subcategories = DB::select("SELECT id, name, category_id FROM subcategories WHERE category_id = ?", [$categoryId]);
-        return response()->json($subcategories);
+        // Cache subcategories for 10 minutes to improve performance
+        $subcategories = Cache::remember("subcategories_category_{$categoryId}", 600, function() use ($categoryId) {
+            return DB::select("SELECT id, name, category_id FROM subcategories WHERE category_id = ? ORDER BY name ASC", [$categoryId]);
+        });
+
+        return response()->json($subcategories, 200, [
+            'Cache-Control' => 'public, max-age=300', // Browser cache for 5 minutes
+            'Content-Type' => 'application/json'
+        ]);
     } catch (\Exception $e) {
         return response()->json(['error' => $e->getMessage()], 500);
     }

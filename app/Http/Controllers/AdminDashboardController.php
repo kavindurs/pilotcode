@@ -19,6 +19,13 @@ class AdminDashboardController extends Controller
 {
     public function index()
     {
+        // Check if the admin is a worker - redirect to properties page
+        $admin = auth('admin')->user();
+        if ($admin->role === 'worker') {
+            return redirect()->route('admin.properties.index')
+                ->with('info', 'Welcome! You have been redirected to the properties section.');
+        }
+
         // Get statistics for the dashboard
         $totalUsers = User::count();
         $totalProperties = Property::count();

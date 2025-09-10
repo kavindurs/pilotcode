@@ -6,10 +6,24 @@
 
 @section('content')
 <div class="bg-gray-800 border border-gray-700 shadow-xl rounded-xl p-6">
-    <h2 class="text-2xl font-semibold mb-6 text-white flex items-center">
-        <i class="fas fa-building text-red-400 mr-3"></i>
-        Properties List
-    </h2>
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-white flex items-center">
+            <i class="fas fa-building text-red-400 mr-3"></i>
+            Properties List
+        </h2>
+        @if($canAddProperty)
+            <a href="{{ route('admin.properties.create') }}"
+               class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 flex items-center">
+                <i class="fas fa-plus mr-2"></i>
+                Add Property
+            </a>
+        @else
+            <div class="bg-gray-500 cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg opacity-50 flex items-center">
+                <i class="fas fa-plus mr-2"></i>
+                Add Property (Access Restricted)
+            </div>
+        @endif
+    </div>
 
     <!-- Tabs for Web and Physical -->
     <div class="mb-6 border-b border-gray-700">
@@ -166,42 +180,70 @@
                         <div class="text-gray-400 text-xs">{{ $property->created_at ? $property->created_at->format('H:i') : '' }}</div>
                     </td>
                     <td class="px-3 py-4 whitespace-nowrap text-sm">
-                        <!-- Single Row with Icon-Only Buttons -->
+                        <!-- Action buttons with role-based permissions -->
                         <div class="flex space-x-1.5">
-                            @if($property->status === 'Not Approved')
-                                <!-- Approve Button -->
-                                <form action="{{ route('admin.properties.approve', $property->id) }}" method="POST" class="inline">
+                            @if($hasFullPermissions)
+                                @if($property->status === 'Not Approved')
+                                    <!-- Approve Button -->
+                                    <form action="{{ route('admin.properties.approve', $property->id) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" title="Approve" class="bg-green-600 hover:bg-green-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                            <i class="fas fa-check text-sm"></i>
+                                        </button>
+                                    </form>
+                                    <!-- Reject Button -->
+                                    <form action="{{ route('admin.properties.reject', $property->id) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" title="Reject" class="bg-red-600 hover:bg-red-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                            <i class="fas fa-times text-sm"></i>
+                                        </button>
+                                    </form>
+                                @else
+                                    <!-- Placeholder for approved items to maintain alignment -->
+                                    <div class="w-8 h-8"></div>
+                                    <div class="w-8 h-8"></div>
+                                @endif
+
+                                <!-- Edit Button -->
+                                <button type="button" data-edit-url="{{ route('admin.properties.edit', $property->id) }}" title="Edit" class="btn-edit bg-blue-600 hover:bg-blue-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                    <i class="fas fa-edit text-sm"></i>
+                                </button>
+
+                                <!-- Delete Button -->
+                                <form action="{{ route('admin.properties.destroy', $property->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this property?');" class="inline">
                                     @csrf
-                                    <button type="submit" title="Approve" class="bg-green-600 hover:bg-green-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
-                                        <i class="fas fa-check text-sm"></i>
-                                    </button>
-                                </form>
-                                <!-- Reject Button -->
-                                <form action="{{ route('admin.properties.reject', $property->id) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" title="Reject" class="bg-red-600 hover:bg-red-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
-                                        <i class="fas fa-times text-sm"></i>
+                                    @method('DELETE')
+                                    <button type="submit" title="Delete" class="bg-gray-600 hover:bg-gray-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-trash text-sm"></i>
                                     </button>
                                 </form>
                             @else
-                                <!-- Placeholder for approved items to maintain alignment -->
-                                <div class="w-8 h-8"></div>
-                                <div class="w-8 h-8"></div>
-                            @endif
+                                <!-- Disabled buttons for worker/other roles -->
+                                @if($property->status === 'Not Approved')
+                                    <!-- Disabled Approve Button -->
+                                    <button type="button" title="Approve (Access Restricted)" class="bg-gray-500 cursor-not-allowed text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm opacity-50" disabled>
+                                        <i class="fas fa-check text-sm"></i>
+                                    </button>
+                                    <!-- Disabled Reject Button -->
+                                    <button type="button" title="Reject (Access Restricted)" class="bg-gray-500 cursor-not-allowed text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm opacity-50" disabled>
+                                        <i class="fas fa-times text-sm"></i>
+                                    </button>
+                                @else
+                                    <!-- Placeholder for approved items to maintain alignment -->
+                                    <div class="w-8 h-8"></div>
+                                    <div class="w-8 h-8"></div>
+                                @endif
 
-                            <!-- Edit Button -->
-                            <button type="button" data-edit-url="{{ route('admin.properties.edit', $property->id) }}" title="Edit" class="btn-edit bg-blue-600 hover:bg-blue-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
-                                <i class="fas fa-edit text-sm"></i>
-                            </button>
+                                <!-- Disabled Edit Button -->
+                                <button type="button" title="Edit (Access Restricted)" class="bg-gray-500 cursor-not-allowed text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm opacity-50" disabled>
+                                    <i class="fas fa-edit text-sm"></i>
+                                </button>
 
-                            <!-- Delete Button -->
-                            <form action="{{ route('admin.properties.destroy', $property->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this property?');" class="inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" title="Delete" class="bg-gray-600 hover:bg-gray-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                <!-- Disabled Delete Button -->
+                                <button type="button" title="Delete (Access Restricted)" class="bg-gray-500 cursor-not-allowed text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm opacity-50" disabled>
                                     <i class="fas fa-trash text-sm"></i>
                                 </button>
-                            </form>
+                            @endif
                         </div>
                     </td>
                 </tr>

@@ -6,10 +6,24 @@
 
 @section('content')
 <div class="bg-gray-800 border border-gray-700 shadow-xl rounded-xl p-6">
-    <h2 class="text-2xl font-semibold mb-6 text-white flex items-center">
-        <i class="fas fa-hand-holding text-red-400 mr-3"></i>
-        Claim Business List
-    </h2>
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-white flex items-center">
+            <i class="fas fa-hand-holding text-red-400 mr-3"></i>
+            Claim Business List
+        </h2>
+        @if($canAddProperty)
+            <a href="{{ route('admin.properties.create') }}"
+               class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 flex items-center">
+                <i class="fas fa-plus mr-2"></i>
+                Add Property
+            </a>
+        @else
+            <div class="bg-gray-500 cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg opacity-50 flex items-center">
+                <i class="fas fa-plus mr-2"></i>
+                Add Property (Access Restricted)
+            </div>
+        @endif
+    </div>
 
     <!-- Tabs for Web and Physical -->
     <div class="mb-6 border-b border-gray-700">
@@ -250,51 +264,79 @@
                         <div class="text-gray-400 text-xs">{{ $property->created_at ? $property->created_at->format('H:i') : '' }}</div>
                     </td>
                     <td class="px-3 py-4 whitespace-nowrap text-sm">
-                        <!-- Action buttons with consistent alignment -->
+                        <!-- Action buttons with role-based permissions -->
                         <div class="flex items-center space-x-1.5">
                             @if($property->status === 'Not Approved & Not Claimed')
-                                <!-- Approve for Claim Button -->
-                                <form action="{{ route('admin.properties.claim-approve', $property->id) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" onclick="return confirm('Are you sure you want to approve this property for claim?');" title="Approve for Claim" class="bg-green-600 hover:bg-green-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                @if($hasFullPermissions)
+                                    <!-- Approve for Claim Button -->
+                                    <form action="{{ route('admin.properties.claim-approve', $property->id) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" onclick="return confirm('Are you sure you want to approve this property for claim?');" title="Approve for Claim" class="bg-green-600 hover:bg-green-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                            <i class="fas fa-check text-sm"></i>
+                                        </button>
+                                    </form>
+                                    <!-- Reject for Claim Button -->
+                                    <form action="{{ route('admin.properties.claim-reject', $property->id) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" onclick="return confirm('Are you sure you want to reject this property for claim?');" title="Reject for Claim" class="bg-red-600 hover:bg-red-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                            <i class="fas fa-times text-sm"></i>
+                                        </button>
+                                    </form>
+                                    <!-- Claim Property Button -->
+                                    <button onclick="claimProperty({{ $property->id }})" title="Claim Property" class="bg-purple-600 hover:bg-purple-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-hand-holding text-sm"></i>
+                                    </button>
+                                @else
+                                    <!-- Disabled buttons for worker/other roles -->
+                                    <button type="button" title="Approve for Claim (Access Restricted)" class="bg-gray-500 cursor-not-allowed text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm opacity-50" disabled>
                                         <i class="fas fa-check text-sm"></i>
                                     </button>
-                                </form>
-                                <!-- Reject for Claim Button -->
-                                <form action="{{ route('admin.properties.claim-reject', $property->id) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" onclick="return confirm('Are you sure you want to reject this property for claim?');" title="Reject for Claim" class="bg-red-600 hover:bg-red-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                    <button type="button" title="Reject for Claim (Access Restricted)" class="bg-gray-500 cursor-not-allowed text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm opacity-50" disabled>
                                         <i class="fas fa-times text-sm"></i>
                                     </button>
-                                </form>
-                                <!-- Claim Property Button -->
-                                <button onclick="claimProperty({{ $property->id }})" title="Claim Property" class="bg-purple-600 hover:bg-purple-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
-                                    <i class="fas fa-hand-holding text-sm"></i>
-                                </button>
+                                    <button type="button" title="Claim Property (Access Restricted)" class="bg-gray-500 cursor-not-allowed text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm opacity-50" disabled>
+                                        <i class="fas fa-hand-holding text-sm"></i>
+                                    </button>
+                                @endif
                             @elseif($property->status === 'Not Claimed')
-                                <!-- Claim Property Button -->
-                                <button onclick="claimProperty({{ $property->id }})" title="Claim Property" class="bg-purple-600 hover:bg-purple-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
-                                    <i class="fas fa-hand-holding text-sm"></i>
-                                </button>
-                                <!-- Edit Button -->
+                                @if($hasFullPermissions)
+                                    <!-- Claim Property Button -->
+                                    <button onclick="claimProperty({{ $property->id }})" title="Claim Property" class="bg-purple-600 hover:bg-purple-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-hand-holding text-sm"></i>
+                                    </button>
+                                @else
+                                    <!-- Disabled Claim Property Button -->
+                                    <button type="button" title="Claim Property (Access Restricted)" class="bg-gray-500 cursor-not-allowed text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm opacity-50" disabled>
+                                        <i class="fas fa-hand-holding text-sm"></i>
+                                    </button>
+                                @endif
+                            @endif
+
+                            <!-- Edit Button - Available for all admin users -->
+                            @if($canEdit)
                                 <button type="button" data-edit-url="{{ route('admin.properties.claim-edit', $property->id) }}" title="Edit" class="btn-edit bg-blue-600 hover:bg-blue-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
                                     <i class="fas fa-edit text-sm"></i>
                                 </button>
                             @else
-                                <!-- Edit Button for other statuses -->
-                                <button type="button" data-edit-url="{{ route('admin.properties.claim-edit', $property->id) }}" title="Edit" class="btn-edit bg-blue-600 hover:bg-blue-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                <button type="button" title="Edit (Access Restricted)" class="bg-gray-500 cursor-not-allowed text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm opacity-50" disabled>
                                     <i class="fas fa-edit text-sm"></i>
                                 </button>
                             @endif
 
-                            <!-- Delete Button - always present -->
-                            <form action="{{ route('admin.properties.claim-destroy', $property->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this property?');" class="inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" title="Delete" class="bg-gray-600 hover:bg-gray-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                            <!-- Delete Button - Only for admin/super_admin -->
+                            @if($hasFullPermissions)
+                                <form action="{{ route('admin.properties.claim-destroy', $property->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this property?');" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" title="Delete" class="bg-gray-600 hover:bg-gray-500 transition-colors text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-trash text-sm"></i>
+                                    </button>
+                                </form>
+                            @else
+                                <button type="button" title="Delete (Access Restricted)" class="bg-gray-500 cursor-not-allowed text-white w-8 h-8 rounded-md flex items-center justify-center shadow-sm opacity-50" disabled>
                                     <i class="fas fa-trash text-sm"></i>
                                 </button>
-                            </form>
+                            @endif
                         </div>
                     </td>
                 </tr>

@@ -69,11 +69,31 @@ class AuthController extends Controller
                 'country' => $country,
                 'user_type' => 'regular user',
                 'is_verified' => false, // User needs to verify email first
-                'referred_by' => $request->get('ref') // Store referral code if provided
+                'referred_by' => null // Initially null, will be set to user ID if referrer found
             ]);
 
-            // Process referral if code was provided
+            // Process referral and calculate referral levels if code was provided
             if ($request->has('ref') && !empty($request->ref)) {
+                // Find the referrer user by referral code
+                $referrer = User::whereHas('referral', function($query) use ($request) {
+                    $query->where('referral_code', $request->ref);
+                })->first();
+
+                if ($referrer) {
+                    // Update the user's referred_by to be the referrer's ID
+                    $user->referred_by = $referrer->id;
+
+                    // Calculate and set referral level
+                    $user->calculateReferralLevel($referrer->id);
+                    $user->save();
+                } else {
+                    // Log that referrer was not found
+                    \Log::warning('Referrer not found for referral code', [
+                        'referral_code' => $request->ref,
+                        'new_user_id' => $user->id
+                    ]);
+                }
+
                 ReferralController::processReferral($request->ref, $user->id);
             }
 
@@ -456,11 +476,31 @@ class AuthController extends Controller
                 'company_name' => $request->company_name,
                 'is_business' => true,
                 'is_verified' => false,
-                'referred_by' => $request->get('ref')
+                'referred_by' => null // Initially null, will be set to user ID if referrer found
             ]);
 
-            // Process referral if code was provided
+            // Process referral and calculate referral levels if code was provided
             if ($request->has('ref') && !empty($request->ref)) {
+                // Find the referrer user by referral code
+                $referrer = User::whereHas('referral', function($query) use ($request) {
+                    $query->where('referral_code', $request->ref);
+                })->first();
+
+                if ($referrer) {
+                    // Update the user's referred_by to be the referrer's ID
+                    $user->referred_by = $referrer->id;
+
+                    // Calculate and set referral level
+                    $user->calculateReferralLevel($referrer->id);
+                    $user->save();
+                } else {
+                    // Log that referrer was not found
+                    \Log::warning('Referrer not found for referral code', [
+                        'referral_code' => $request->ref,
+                        'new_user_id' => $user->id
+                    ]);
+                }
+
                 ReferralController::processReferral($request->ref, $user->id);
             }
 

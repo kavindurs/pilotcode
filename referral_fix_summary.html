@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Referral Form</title>
+</head>
+<body>
+    <h1>Test Referral Registration Form</h1>
+
+    <h2>Scenario: User clicks referral link</h2>
+    <p>URL: <code>/register?ref=REF0CGXUFCV</code></p>
+
+    <h3>Before Fix:</h3>
+    <p>❌ Form didn't capture the 'ref' parameter → New users always got level 1</p>
+
+    <h3>After Fix:</h3>
+    <p>✅ Form now includes hidden field: <code>&lt;input type="hidden" name="ref" value="REF0CGXUFCV"&gt;</code></p>
+    <p>✅ AuthController receives the referral code and processes it correctly</p>
+    <p>✅ New users get the correct referral level based on their referrer's position</p>
+
+    <h2>Complete User Journey:</h2>
+    <ol>
+        <li><strong>Master User</strong> (Level 0) shares referral link</li>
+        <li><strong>Sub User</strong> clicks link → registers → gets Level 1</li>
+        <li><strong>Sub User</strong> shares their referral link</li>
+        <li><strong>Third User</strong> clicks link → registers → gets Level 2</li>
+    </ol>
+
+    <div style="background: #d4edda; padding: 10px; border-radius: 5px; margin: 20px 0;">
+        <h3>✅ PROBLEM SOLVED!</h3>
+        <p>The issue was that the registration form wasn't capturing the referral code from the URL. Now it does!</p>
+    </div>
+
+    <h2>Key Files Updated:</h2>
+    <ul>
+        <li><code>user_registration.blade.php</code> - Added hidden referral field</li>
+        <li><code>AuthController.php</code> - Fixed referral processing logic</li>
+        <li><code>User.php</code> - Enhanced calculateReferralLevel method</li>
+    </ul>
+</body>
+</html>

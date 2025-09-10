@@ -97,6 +97,7 @@
             <div class="ml-3">
               <p class="text-sm font-medium text-white">{{ Auth::guard('admin')->user()->name ?? 'Administrator' }}</p>
               <p class="text-xs text-gray-400">{{ Auth::guard('admin')->user()->email ?? 'admin@example.com' }}</p>
+              <p class="text-xs text-blue-400 capitalize">{{ ucfirst(str_replace('_', ' ', Auth::guard('admin')->user()->role ?? 'admin')) }}</p>
             </div>
           </div>
         </div>
@@ -105,7 +106,9 @@
         <nav class="mt-4 px-3">
           <div class="text-xs uppercase text-gray-500 font-semibold px-3 mb-2">Main Menu</div>
           <ul class="space-y-1">
-            <!-- Dashboard Tab -->
+
+            @if(Auth::guard('admin')->user()->role !== 'worker')
+            <!-- Dashboard Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-dashboard', '')">
               <a href="{{ route('admin.dashboard') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -115,8 +118,7 @@
               </a>
             </li>
 
-
-            <!-- Staff Management Tab -->
+            <!-- Staff Management Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-staff', '')">
               <a href="{{ route('admin.staff.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -126,7 +128,7 @@
               </a>
             </li>
 
-            <!-- Users Tab -->
+            <!-- Users Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-users', '')">
               <a href="{{ route('admin.users.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -135,8 +137,9 @@
                 <span>Users</span>
               </a>
             </li>
+            @endif
 
-            <!-- Properties Tab -->
+            <!-- Properties Tab - Always visible -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-properties', '')">
               <a href="{{ route('admin.properties.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -146,7 +149,7 @@
               </a>
             </li>
 
-            <!-- Claim Business Tab -->
+            <!-- Claim Business Tab - Available for all admin roles -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-claim-business', '')">
               <a href="{{ route('admin.properties.claim-index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -156,7 +159,9 @@
               </a>
             </li>
 
-            <!-- Claim Invitations Tab -->
+            @if(Auth::guard('admin')->user()->role !== 'worker')
+
+            <!-- Claim Invitations Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-claim-invitations', '')">
               <a href="{{ route('admin.business-claims.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -168,7 +173,7 @@
 
             <div class="text-xs uppercase text-gray-500 font-semibold px-3 mb-2 mt-6">Content Management</div>
 
-            <!-- Reviews Tab -->
+            <!-- Reviews Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-reviews', '')">
               <a href="{{ route('admin.reviews.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -178,7 +183,7 @@
               </a>
             </li>
 
-            <!-- Email Templates Tab -->
+            <!-- Email Templates Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-email-templates', '')">
               <a href="{{ route('admin.email_templates.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -188,7 +193,7 @@
               </a>
             </li>
 
-            <!-- Categories Tab -->
+            <!-- Categories Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-categories', '')">
               <a href="{{ route('admin.categories.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -197,8 +202,10 @@
                 <span>Categories</span>
               </a>
             </li>
+            @endif
 
-            <!-- Subcategories Tab -->
+            @if(Auth::guard('admin')->user()->role !== 'worker')
+            <!-- Subcategories Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-subcategories', '')">
               <a href="{{ route('admin.subcategories.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -208,7 +215,7 @@
               </a>
             </li>
 
-            <!-- Plans Tab -->
+            <!-- Plans Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-plans', '')">
               <a href="{{ route('admin.plans.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -218,7 +225,7 @@
               </a>
             </li>
 
-            <!-- Referrals Tab -->
+            <!-- Referrals Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-referrals', '')">
               <a href="{{ route('admin.referrals.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -230,7 +237,7 @@
 
             <div class="text-xs uppercase text-gray-500 font-semibold px-3 mb-2 mt-6">Financial</div>
 
-            <!-- Payments Tab -->
+            <!-- Payments Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-payments', '')">
               <a href="{{ route('admin.payments.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -240,7 +247,7 @@
               </a>
             </li>
 
-            <!-- Wallets Tab -->
+            <!-- Wallets Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-wallets', '')">
               <a href="{{ route('admin.wallets.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -252,9 +259,7 @@
 
             <div class="text-xs uppercase text-gray-500 font-semibold px-3 mb-2 mt-6">System</div>
 
-
-
-            <!-- Ads Manager Tab -->
+            <!-- Ads Manager Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-ads-manager', '')">
               <a href="{{ route('admin.ads.index') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -264,7 +269,7 @@
               </a>
             </li>
 
-            <!-- Analytics Tab -->
+            <!-- Analytics Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-analytics', '')">
               <a href="{{ route('admin.analytics') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -274,8 +279,7 @@
               </a>
             </li>
 
-
-            <!-- Settings Tab -->
+            <!-- Settings Tab - Hidden for workers -->
             <li class="menu-item rounded-md overflow-hidden @yield('active-settings', '')">
               <a href="{{ route('admin.profile.edit') }}" class="flex items-center text-gray-200 py-3 px-3 rounded-md group transition-all duration-200">
                 <span class="w-8 h-8 flex items-center justify-center bg-red-900 group-hover:bg-red-700 rounded-md transition-colors mr-3">
@@ -284,6 +288,7 @@
                 <span>Settings</span>
               </a>
             </li>
+            @endif
 
             <!-- Logout Option -->
             <li class="menu-item rounded-md overflow-hidden mt-6">

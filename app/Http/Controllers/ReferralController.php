@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Referral;
 use App\Models\ReferralEarning;
+use App\Models\ReferralRate;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -69,30 +70,114 @@ class ReferralController extends Controller
             return false;
         }
 
-        // Create referral earning record
-        if ($propertyId && $planId && $planAmount) {
-            $earning = ReferralEarning::create([
-                'referrer_id' => $referral->user_id,
-                'referred_user_id' => $userId, // Can be null for property referrals
-                'property_id' => $propertyId,
-                'plan_id' => $planId,
-                'referral_code' => $referralCode,
-                'plan_amount' => $planAmount,
-                'commission_rate' => $referral->getCommissionRate(), // Use system-wide rate
-                'status' => 'pending',
-            ]);
-
-            // Add to referrer's pending wallet balance
-            $wallet = $referral->user->getOrCreateWallet();
-            $wallet->addMoney($earning->commission_amount, 'pending_balance');
-
-            // Update referral stats
-            $referral->updateStats();
-
-            return $earning;
+        // For user registration, we don't process earnings immediately
+        // Earnings are processed when user makes a purchase
+        if (!$propertyId || !$planId || !$planAmount) {
+            return true;
         }
 
-        return true;
+        // Process 3-level referral earnings for property purchases
+        $referredUser = User::find($userId);
+        if (!$referredUser) {
+            return false;
+        }
+
+        return self::process3LevelReferralEarnings($referredUser, $propertyId, $planId, $planAmount);
+    }
+
+    /**
+     * Process 3-level referral earnings based on the user's referral chain.
+     */
+    public static function process3LevelReferralEarnings($user, $propertyId, $planId, $planAmount)
+    {
+        $earnings = [];
+
+        // Get referral rates from database (IDs 1, 2, 3 for levels 1, 2, 3)
+        $level1Rate = ReferralRate::find(1)?->rate ?? 10.00;
+        $level2Rate = ReferralRate::find(2)?->rate ?? 5.00;
+        $level3Rate = ReferralRate::find(3)?->rate ?? 2.50;
+
+        // Level 1: Direct referrer
+        if ($user->referred_by) {
+            $level1Referrer = User::find($user->referred_by);
+            if ($level1Referrer) {
+                $earning = ReferralEarning::create([
+                    'referrer_id' => $level1Referrer->id,
+                    'referred_user_id' => $user->id,
+                    'property_id' => $propertyId,
+                    'plan_id' => $planId,
+                    'referral_code' => $level1Referrer->referral?->referral_code ?? '',
+                    'plan_amount' => $planAmount,
+                    'commission_rate' => $level1Rate,
+                    'status' => 'pending',
+                ]);
+
+                // Add to referrer's pending wallet balance
+                $wallet = $level1Referrer->getOrCreateWallet();
+                $wallet->addMoney($earning->commission_amount, 'pending_balance');
+
+                // Update referral stats
+                if ($level1Referrer->referral) {
+                    $level1Referrer->referral->updateStats();
+                }
+
+                $earnings[] = $earning;
+
+                // Level 2: Referrer of Level 1 referrer
+                if ($level1Referrer->referred_by) {
+                    $level2Referrer = User::find($level1Referrer->referred_by);
+                    if ($level2Referrer) {
+                        $earning2 = ReferralEarning::create([
+                            'referrer_id' => $level2Referrer->id,
+                            'referred_user_id' => $user->id,
+                            'property_id' => $propertyId,
+                            'plan_id' => $planId,
+                            'referral_code' => $level2Referrer->referral?->referral_code ?? '',
+                            'plan_amount' => $planAmount,
+                            'commission_rate' => $level2Rate,
+                            'status' => 'pending',
+                        ]);
+
+                        $wallet2 = $level2Referrer->getOrCreateWallet();
+                        $wallet2->addMoney($earning2->commission_amount, 'pending_balance');
+
+                        if ($level2Referrer->referral) {
+                            $level2Referrer->referral->updateStats();
+                        }
+
+                        $earnings[] = $earning2;
+
+                        // Level 3: Referrer of Level 2 referrer
+                        if ($level2Referrer->referred_by) {
+                            $level3Referrer = User::find($level2Referrer->referred_by);
+                            if ($level3Referrer) {
+                                $earning3 = ReferralEarning::create([
+                                    'referrer_id' => $level3Referrer->id,
+                                    'referred_user_id' => $user->id,
+                                    'property_id' => $propertyId,
+                                    'plan_id' => $planId,
+                                    'referral_code' => $level3Referrer->referral?->referral_code ?? '',
+                                    'plan_amount' => $planAmount,
+                                    'commission_rate' => $level3Rate,
+                                    'status' => 'pending',
+                                ]);
+
+                                $wallet3 = $level3Referrer->getOrCreateWallet();
+                                $wallet3->addMoney($earning3->commission_amount, 'pending_balance');
+
+                                if ($level3Referrer->referral) {
+                                    $level3Referrer->referral->updateStats();
+                                }
+
+                                $earnings[] = $earning3;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $earnings;
     }
 
     /**

@@ -120,6 +120,37 @@
                             </div>
 
                             <div>
+                                <label for="referral_code" class="block text-sm font-medium text-gray-300 mb-2">
+                                    Referral Code *
+                                </label>
+                                <div class="flex">
+                                    <input
+                                        type="text"
+                                        id="referral_code"
+                                        name="referral_code"
+                                        value="{{ old('referral_code', $referral->referral_code) }}"
+                                        required
+                                        maxlength="20"
+                                        pattern="[A-Za-z0-9]+"
+                                        class="flex-1 bg-gray-700 border border-gray-600 text-white rounded-l-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('referral_code') border-red-500 @enderror"
+                                        placeholder="Enter unique referral code"
+                                    >
+                                    <button
+                                        type="button"
+                                        onclick="generateNewCode()"
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-r-lg transition-colors"
+                                        title="Generate New Code"
+                                    >
+                                        <i class="fas fa-refresh"></i>
+                                    </button>
+                                </div>
+                                @error('referral_code')
+                                    <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
+                                @enderror
+                                <p class="text-gray-500 text-sm mt-1">Must be unique and contain only letters and numbers (max 20 characters)</p>
+                            </div>
+
+                            <div>
                                 <label for="commission_rate" class="block text-sm font-medium text-gray-300 mb-2">
                                     Commission Rate (%) *
                                 </label>
@@ -281,6 +312,26 @@ function copyToClipboard(text) {
             notification.remove();
         }, 2000);
     });
+}
+
+function generateNewCode() {
+    // Generate a new referral code similar to the backend logic
+    const prefix = 'REF';
+    const randomString = Math.random().toString(36).substring(2, 10).toUpperCase();
+    const newCode = prefix + randomString;
+
+    // Set the new code in the input field
+    document.getElementById('referral_code').value = newCode;
+
+    // Show notification
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+    notification.textContent = 'New referral code generated!';
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 2000);
 }
 </script>
 @endsection

@@ -65,36 +65,64 @@
             @enderror
         </div>
 
-        <!-- Status -->
+        <!-- Status (Admin/Super Admin Only) -->
         <div>
-            <label for="status" class="block text-sm font-medium text-gray-300">Status</label>
-            @if(isset($isClaim) && $isClaim)
-                <input type="hidden" name="status" value="Approved">
-                <input type="text" value="Approved" readonly
-                       class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-600 text-gray-400 shadow-sm cursor-not-allowed">
-                <p class="mt-1 text-sm text-red-400">Status is automatically set to "Approved" when claiming a property.</p>
+            @if($canEditStatus)
+                <label for="status" class="block text-sm font-medium text-gray-300">
+                    Status
+                    <span class="ml-2 px-2 py-1 text-xs bg-orange-600 text-white rounded-full">Admin Only</span>
+                </label>
+                @if(isset($isClaim) && $isClaim)
+                    <input type="hidden" name="status" value="Approved">
+                    <input type="text" value="Approved" readonly
+                           class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-600 text-gray-400 shadow-sm cursor-not-allowed">
+                    <p class="mt-1 text-sm text-red-400">Status is automatically set to "Approved" when claiming a property.</p>
+                @else
+                    <select name="status" id="status" class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors" required>
+                        <option value="Not Claimed" {{ $property->status === 'Not Claimed' ? 'selected' : '' }}>Not Claimed</option>
+                        <option value="Not Approved & Not Claimed" {{ $property->status === 'Not Approved & Not Claimed' ? 'selected' : '' }}>Not Approved & Not Claimed</option>
+                        <option value="Not Claimed & Rejected" {{ $property->status === 'Not Claimed & Rejected' ? 'selected' : '' }}>Not Claimed & Rejected</option>
+                    </select>
+                    <p class="mt-1 text-sm text-gray-400">
+                        <i class="fas fa-shield-alt mr-1"></i>
+                        Only administrators can change property status.
+                    </p>
+                @endif
             @else
-                <select name="status" id="status" class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors" required>
-                    <option value="Not Claimed" {{ $property->status === 'Not Claimed' ? 'selected' : '' }}>Not Claimed</option>
-                    <option value="Not Approved & Not Claimed" {{ $property->status === 'Not Approved & Not Claimed' ? 'selected' : '' }}>Not Approved & Not Claimed</option>
-                    <option value="Not Claimed & Rejected" {{ $property->status === 'Not Claimed & Rejected' ? 'selected' : '' }}>Not Claimed & Rejected</option>
-                </select>
+                <label for="status" class="block text-sm font-medium text-gray-300">Status</label>
+                <div class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-600 text-gray-400 shadow-sm cursor-not-allowed">
+                    {{ $property->status }}
+                    <span class="ml-2 px-2 py-1 text-xs bg-gray-500 text-gray-300 rounded-full">Read Only</span>
+                </div>
+                <p class="mt-1 text-sm text-gray-400">
+                    <i class="fas fa-lock mr-1"></i>
+                    You don't have permission to change the status. Contact an administrator.
+                </p>
             @endif
             @error('status')
                 <p class="mt-1 text-sm text-red-400">{{ $message }}</p>
             @enderror
         </div>
 
-        <!-- Password -->
+        <!-- Password (Admin/Super Admin Only) -->
+        @if($canEditPassword)
         <div>
-            <label for="password" class="block text-sm font-medium text-gray-300">Password</label>
+            <label for="password" class="block text-sm font-medium text-gray-300">
+                Password
+                <span class="ml-2 px-2 py-1 text-xs bg-red-600 text-white rounded-full">Admin Only</span>
+            </label>
             <input type="password" name="password" id="password" value="{{ old('password') }}"
                    class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-gray-200 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
                    placeholder="Leave blank to keep current password">
+            <p class="mt-1 text-sm text-gray-400">
+                <i class="fas fa-info-circle mr-1"></i>
+                Only administrators can change property passwords.
+            </p>
             @error('password')
                 <p class="mt-1 text-sm text-red-400">{{ $message }}</p>
             @enderror
         </div>
+        @endif
 
         <!-- Domain/Document Field - Dynamic based on Property Type -->
         <div id="domain-field" style="display: {{ $property->property_type === 'web' ? 'block' : 'none' }}">

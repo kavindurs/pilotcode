@@ -37,6 +37,10 @@ class User extends Authenticatable implements CanResetPassword
         'email_otp_expires_at',
         'is_verified',
         'email_verified_at',
+        'referred_by',
+        'parent_referrer_id',
+        'referral_level',
+        'referral_path',
     ];
 
     /**
@@ -115,6 +119,119 @@ class User extends Authenticatable implements CanResetPassword
     public function referredEarnings()
     {
         return $this->hasMany(ReferralEarning::class, 'referred_user_id');
+    }
+
+    /**
+     * Get the user who referred this user (direct referrer).
+     */
+    public function referrer()
+    {
+        return $this->belongsTo(User::class, 'referred_by');
+    }
+
+    /**
+     * Get users directly referred by this user (Level 1 referrals).
+     */
+    public function directReferrals()
+    {
+        return $this->hasMany(User::class, 'referred_by');
+    }
+
+    /**
+     * Get the parent referrer (original referrer in the chain).
+     */
+    public function parentReferrer()
+    {
+        return $this->belongsTo(User::class, 'parent_referrer_id');
+    }
+
+    /**
+     * Get all users where this user is the parent referrer.
+     */
+    public function allChildReferrals()
+    {
+        return $this->hasMany(User::class, 'parent_referrer_id');
+    }
+
+    /**
+     * Get Level 2 referrals (referrals of direct referrals).
+     */
+    public function level2Referrals()
+    {
+        return $this->hasManyThrough(User::class, User::class, 'referred_by', 'referred_by', 'id', 'id');
+    }
+
+    /**
+     * Calculate and update referral level based on referrer.
+     */
+    public function calculateReferralLevel($referrerId)
+    {
+        if (!$referrerId) {
+            $this->referral_level = 0;
+            $this->parent_referrer_id = null;
+            $this->referral_path = null;
+            return;
+        }
+
+        $referrer = User::find($referrerId);
+        if (!$referrer) {
+            $this->referral_level = 1;
+            $this->parent_referrer_id = $referrerId;
+            $this->referral_path = $referrerId;
+            return;
+        }
+
+        $referrerLevel = $referrer->referral_level ?? 0;
+
+        if ($referrerLevel == 0) {
+            // Direct referral of original user (Level 1)
+            $this->referral_level = 1;
+            $this->parent_referrer_id = $referrerId;
+            $this->referral_path = $referrerId;
+        } elseif ($referrerLevel == 1) {
+            // Referral of Level 1 user (Level 2)
+            $this->referral_level = 2;
+            $this->parent_referrer_id = $referrer->parent_referrer_id;
+            $this->referral_path = $referrer->referral_path . ',' . $referrerId;
+        } elseif ($referrerLevel == 2) {
+            // Referral of Level 2 user (Level 3)
+            $this->referral_level = 3;
+            $this->parent_referrer_id = $referrer->parent_referrer_id;
+            $this->referral_path = $referrer->referral_path . ',' . $referrerId;
+        } else {
+            // Beyond Level 3, no tracking
+            $this->referral_level = null;
+            $this->parent_referrer_id = null;
+            $this->referral_path = null;
+        }
+    }
+
+    /**
+     * Get all referrals in the chain (Level 1, 2, 3).
+     */
+    public function getAllReferralsInChain()
+    {
+        $allReferrals = collect();
+
+        // Level 1 referrals
+        $level1 = $this->directReferrals;
+        $allReferrals = $allReferrals->merge($level1);
+
+        // Level 2 referrals
+        foreach ($level1 as $level1User) {
+            $level2 = $level1User->directReferrals;
+            $allReferrals = $allReferrals->merge($level2);
+        }
+
+        // Level 3 referrals
+        foreach ($level1 as $level1User) {
+            foreach ($level1User->directReferrals as $level2User) {
+                $level3 = $level2User->directReferrals;
+                $allReferrals = $allReferrals->merge($level3);
+            }
+        }
+
+        return $allReferrals;
     }
 
     /**
