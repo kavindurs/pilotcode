@@ -8,6 +8,7 @@ use App\Models\Property;
 use App\Models\AdminSetting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class SimpleAdController extends Controller
 {
@@ -40,6 +41,48 @@ class SimpleAdController extends Controller
     {
         $ad->load(['property', 'approvedBy']);
         return view('admin.ads.show_simple', compact('ad'));
+    }
+
+    /**
+     * Store a new ad from admin panel
+     */
+    public function store(Request $request)
+    {
+        $validatedData = $request->validate([
+            'property_id' => 'required|exists:properties,id',
+            'start_date' => 'required|date|after_or_equal:today',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'daily_rate' => 'required|numeric|min:0',
+            'status' => 'required|in:active,pending,approved',
+            'admin_notes' => 'nullable|string|max:1000'
+        ]);
+
+        // Calculate total days and amount
+        $startDate = Carbon::parse($validatedData['start_date']);
+        $endDate = Carbon::parse($validatedData['end_date']);
+        $totalDays = $startDate->diffInDays($endDate) + 1;
+        $totalAmount = $validatedData['daily_rate'] * $totalDays;
+
+        // Create the ad
+        $ad = Ad::create([
+            'property_id' => $validatedData['property_id'],
+            'start_date' => $validatedData['start_date'],
+            'end_date' => $validatedData['end_date'],
+            'daily_rate' => $validatedData['daily_rate'],
+            'total_days' => $totalDays,
+            'total_amount' => $totalAmount,
+            'status' => $validatedData['status'],
+            'admin_notes' => $validatedData['admin_notes'],
+            'approved_at' => $validatedData['status'] === 'approved' ? now() : null,
+            'approved_by' => $validatedData['status'] === 'approved' ? Auth::guard('admin')->id() : null,
+            // Set payment fields to indicate admin creation
+            'payment_status' => 'paid',
+            'paid_at' => now(),
+            'payment_notes' => 'Created by admin'
+        ]);
+
+        return redirect()->route('admin.ads.index')
+            ->with('success', 'Ad created successfully');
     }
 
     /**

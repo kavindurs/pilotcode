@@ -11,6 +11,10 @@
             <h1 class="text-2xl font-bold text-white">Ad Requests Management</h1>
             <p class="text-gray-400">Review and manage property promotion requests</p>
         </div>
+        <button onclick="showCreateAdModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+            <i class="fas fa-plus"></i>
+            <span>Create New Ad</span>
+        </button>
     </div>
 
     <!-- Success/Error Messages -->
@@ -283,4 +287,134 @@
         @endif
     </div>
 </div>
+
+<!-- Create Ad Modal -->
+<div id="createAdModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-gray-800 rounded-lg p-6 w-full max-w-2xl">
+        <h3 class="text-lg font-semibold text-white mb-4">Create New Ad</h3>
+
+        <form id="createAdForm" method="POST" action="{{ route('admin.ads.store') }}" enctype="multipart/form-data">
+            @csrf
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Property Selection -->
+                <div class="mb-4 md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-300 mb-2" for="property_id">
+                        Select Property <span class="text-red-400">*</span>
+                    </label>
+                    <select name="property_id" id="property_id" required
+                            class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Select a property...</option>
+                        @foreach(\App\Models\Property::orderBy('business_name')->get() as $property)
+                            <option value="{{ $property->id }}">{{ $property->business_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Start Date -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-300 mb-2" for="start_date">
+                        Start Date <span class="text-red-400">*</span>
+                    </label>
+                    <input type="date" name="start_date" id="start_date" required
+                           min="{{ date('Y-m-d') }}"
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <!-- End Date -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-300 mb-2" for="end_date">
+                        End Date <span class="text-red-400">*</span>
+                    </label>
+                    <input type="date" name="end_date" id="end_date" required
+                           min="{{ date('Y-m-d') }}"
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <!-- Daily Rate -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-300 mb-2" for="daily_rate">
+                        Daily Rate ($) <span class="text-red-400">*</span>
+                    </label>
+                    <input type="number" name="daily_rate" id="daily_rate" required
+                           step="0.01" min="0"
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="0.00">
+                </div>
+
+                <!-- Status -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-300 mb-2" for="status">
+                        Status <span class="text-red-400">*</span>
+                    </label>
+                    <select name="status" id="status" required
+                            class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="active">Active</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                    </select>
+                </div>
+
+                <!-- Admin Notes -->
+                <div class="mb-4 md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-300 mb-2" for="admin_notes">
+                        Admin Notes
+                    </label>
+                    <textarea name="admin_notes" id="admin_notes" rows="3"
+                              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="Add any additional notes..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-4">
+                <button type="button" onclick="hideCreateAdModal()"
+                        class="px-4 py-2 border border-gray-600 text-gray-300 rounded-md hover:bg-gray-700 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
+                    Create Ad
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+// Create Ad Modal Functions
+function showCreateAdModal() {
+    document.getElementById('createAdModal').classList.remove('hidden');
+    document.getElementById('createAdModal').classList.add('flex');
+}
+
+function hideCreateAdModal() {
+    document.getElementById('createAdModal').classList.add('hidden');
+    document.getElementById('createAdModal').classList.remove('flex');
+    document.getElementById('createAdForm').reset();
+}
+
+// Set minimum dates for date inputs
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('start_date').min = today;
+    document.getElementById('end_date').min = today;
+
+    // Update end_date min when start_date changes
+    document.getElementById('start_date').addEventListener('change', function() {
+        document.getElementById('end_date').min = this.value;
+        if (document.getElementById('end_date').value < this.value) {
+            document.getElementById('end_date').value = this.value;
+        }
+    });
+});
+
+// Close create ad modal when clicking outside
+document.getElementById('createAdModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideCreateAdModal();
+    }
+});
+</script>
+@endpush
+
 @endsection

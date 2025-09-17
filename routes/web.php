@@ -529,6 +529,10 @@ Route::prefix('admin')->group(function () {
          ->name('admin.ads.deactivate')
          ->middleware('auth:admin');
 
+    Route::post('ads', [\App\Http\Controllers\Admin\SimpleAdController::class, 'store'])
+         ->name('admin.ads.store')
+         ->middleware('auth:admin');
+
     Route::put('ads/settings/cost', [\App\Http\Controllers\Admin\SimpleAdController::class, 'updateAdCost'])
          ->name('admin.settings.ad-cost.update')
          ->middleware('auth:admin');
