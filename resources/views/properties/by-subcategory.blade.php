@@ -329,7 +329,7 @@
                                     <!-- Smaller Logo Container -->
                                     <div class="w-16 h-16 flex-shrink-0 bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 relative">
                                         @if($property->profile_picture)
-                                            <img src="{{ asset('storage/' . $property->profile_picture) }}"
+                                            <img src="{{ asset('storage/app/public/' . $property->profile_picture) }}"
                                                  alt="{{ $property->business_name }}"
                                                  class="w-full h-full object-cover">
                                         @elseif($property->document_path)
@@ -621,7 +621,7 @@
                                     <!-- Smaller Logo Container -->
                                     <div class="w-16 h-16 flex-shrink-0 bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 relative">
                                         @if($property->profile_picture)
-                                            <img src="{{ asset('storage/' . $property->profile_picture) }}"
+                                            <img src="{{ asset('storage/app/public/' . $property->profile_picture) }}"
                                                  alt="{{ $property->business_name }}"
                                                  class="w-full h-full object-cover">
                                         @elseif($property->document_path)
@@ -744,7 +744,7 @@
                                 <!-- Smaller Logo -->
                                 <div class="w-20 h-20 flex-shrink-0 bg-white rounded-lg overflow-hidden mr-5 shadow-md border border-gray-200 relative group">
                                     @if($property->profile_picture)
-                                        <img src="{{ asset('storage/' . $property->profile_picture) }}"
+                                        <img src="{{ asset('storage/app/public/' . $property->profile_picture) }}"
                                              alt="{{ $property->business_name }}"
                                              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                                     @elseif($property->document_path)
