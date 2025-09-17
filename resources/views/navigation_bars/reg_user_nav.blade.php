@@ -52,13 +52,13 @@
                                 <h3 class="text-sm font-semibold text-gray-900 uppercase mb-4">Popular Subcategories</h3>
                                 <ul class="space-y-3">
                                     <li>
-                                        <a href="{{ route('properties.subcategory', 20) }}" class="flex items-center text-gray-600 hover:text-blue-600">
+                                        <a href="{{ route('properties.subcategory', 187) }}" class="flex items-center text-gray-600 hover:text-blue-600">
                                             <i class="fas fa-taxi w-5 h-5 mr-3 text-blue-600"></i>
                                             Taxis & Public Transport
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="{{ route('properties.subcategory', 17) }}" class="flex items-center text-gray-600 hover:text-blue-600">
+                                        <a href="{{ route('properties.subcategory', 184) }}" class="flex items-center text-gray-600 hover:text-blue-600">
                                             <i class="fas fa-car w-5 h-5 mr-3 text-blue-600"></i>
                                             Cars & Trucks
                                         </a>
@@ -75,15 +75,15 @@
                                 <h3 class="text-sm font-semibold text-gray-900 uppercase mb-4">More Categories</h3>
                                 <ul class="space-y-3">
                                     <li>
-                                        <a href="{{ route('properties.subcategory', 10) }}" class="flex items-center text-gray-600 hover:text-blue-600">
+                                        <a href="{{ route('properties.subcategory', 158) }}" class="flex items-center text-gray-600 hover:text-blue-600">
                                             <i class="fas fa-shield-alt w-5 h-5 mr-3 text-blue-600"></i>
                                             Insurance
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="{{ route('properties.subcategory', 4) }}" class="flex items-center text-gray-600 hover:text-blue-600">
-                                            <i class="fas fa-horse w-5 h-5 mr-3 text-blue-600"></i>
-                                            Horses & Riding
+                                        <a href="{{ route('properties.subcategory', 49) }}" class="flex items-center text-gray-600 hover:text-blue-600">
+                                            <i class="fas fa-wine-bottle w-5 h-5 mr-3 text-blue-600"></i>
+                                            Beer & Wine
                                         </a>
                                     </li>
                                     <li>
@@ -207,11 +207,11 @@
 
                             <div x-show="isOpen" class="mt-2 space-y-2 pl-4">
                                 <!-- Mobile Category Items -->
-                                <a href="{{ route('properties.subcategory', 20) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
+                                <a href="{{ route('properties.subcategory', 187) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
                                     <i class="fas fa-taxi w-4 h-4 mr-3 text-blue-600"></i>
                                     Taxis & Public Transport
                                 </a>
-                                <a href="{{ route('properties.subcategory', 17) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
+                                <a href="{{ route('properties.subcategory', 184) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
                                     <i class="fas fa-car w-4 h-4 mr-3 text-blue-600"></i>
                                     Cars & Trucks
                                 </a>
@@ -219,13 +219,13 @@
                                     <i class="fas fa-paw w-4 h-4 mr-3 text-blue-600"></i>
                                     Pet Services
                                 </a>
-                                <a href="{{ route('properties.subcategory', 10) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
+                                <a href="{{ route('properties.subcategory', 158) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
                                     <i class="fas fa-shield-alt w-4 h-4 mr-3 text-blue-600"></i>
                                     Insurance
                                 </a>
-                                <a href="{{ route('properties.subcategory', 4) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
-                                    <i class="fas fa-horse w-4 h-4 mr-3 text-blue-600"></i>
-                                    Horses & Riding
+                                <a href="{{ route('properties.subcategory', 49) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
+                                    <i class="fas fa-wine-bottle w-4 h-4 mr-3 text-blue-600"></i>
+                                    Beer & Wine
                                 </a>
                                 <a href="{{ route('properties.subcategory', 3) }}" class="flex items-center py-2 text-sm text-gray-700 hover:text-blue-600">
                                     <i class="fas fa-dog w-4 h-4 mr-3 text-blue-600"></i>
